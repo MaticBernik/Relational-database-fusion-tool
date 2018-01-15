@@ -12,6 +12,7 @@ from collections import Counter
 import itertools
 from skfusion import fusion
 from pathlib import Path
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 
 
@@ -469,6 +470,7 @@ class Fuse():
         :return:list of relational matrices.
         Only 1 matrix if binarization of attribute(column_id) is not required.
         '''
+        matrices=[]
         print("***Generiranje matrik za stolpec vmesne matrike..")
         objects_table1 = self.get_object_ids(table1)
         objects_table2 = self.get_object_ids(table2)
@@ -483,19 +485,37 @@ class Fuse():
         if len(objects_table1[1]) == 0 or len(objects_table2[1]) == 0:
             return []
 
-        print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+'AND'.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+'AND'.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
-        self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+'AND'.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+'AND'.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
+        print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
+        self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         rows=self.cursor.fetchall()
         #print(rows)
 
-        R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
+        nr_columns=1
+        print("PODATKOVNI TIP STOLPCA: ",self.column_data_type[table + '_' + column_id])
+        if self.column_data_type[table+'_'+column_id][1]=="str":
+            if len(set(rows[:,-1]))>self.dummy_variable_treshold:
+                print("###Stolpec "+table+"."+column_id+" ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.")
+                return []
+            labelencoder=LabelEncoder()
+            rows[:,-1]=labelencoder.fit_transform(rows[:,-1])
+            nr_columns=len(labelencoder.classes_)
+            onehotencoder = OneHotEncoder(categorical_features=[-1])
+            rows=onehotencoder.fit_transform(rows).toarray()
+            #dummy variable trap?
+            print(rows)
+            #move dummy variables from begining to end of table!
+
+        for i in range(nr_columns):
+            R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
+            matrices.append(R)
         for row in rows:
             #print(row)
             c1=tuple(row[0:len(objects_table1[0])])
-            c2=tuple(row[len(objects_table1[0]):-1])
-            v=row[-1]
-            R[objects_table1[1].index(c1)][objects_table2[1].index(c2)]=v
-        return [R]
+            c2=tuple(row[len(objects_table1[0]):-nr_columns])
+            v=row[-nr_columns:]
+            for i in range(nr_columns):
+                matrices[i][objects_table1[1].index(c1)][objects_table2[1].index(c2)]=v[i]
+        return matrices
 
     def get_object_ids(self,table):
         '''
@@ -563,17 +583,17 @@ class Fuse():
         '''
         self.object_types=[]
         for table in self.tables:
-            primary_key_columns=[x[2] for x in self.primary_keys if x[0]==table]
-            foreign_key_columns=[x[3] for x in self.foreign_keys if x[1]==table]
+            primary_key_columns=[x[1] for x in self.primary_keys if x[0]==table[1]]
+            foreign_key_columns=[x[2] for x in self.foreign_keys if x[1]==table[1]]
             for key in primary_key_columns:
                 if not key in foreign_key_columns:
-                    self.object_types.append(table)
+                    self.object_types.append(table[1])
                     break
 
         #save list of object types to file
         self.checkpoint_file.write("#OBJECT TYPES\n")
         for line in self.object_types:
-            self.checkpoint_file.write("\t".join(line)+"\n")
+            self.checkpoint_file.write(line+"\n")
         self.checkpoint_file.write("\n")
 
     def build_relation_matricies(self):
@@ -665,9 +685,10 @@ class Fuse():
         !!!!!
         PROBLEM: ROWS REFERENCED FROM SAMPLED TABLE1 SHOULD BE INCLUDED IN SAMPLE REPRESENTING TABLE2
 
-        Shuld ratio between table sizes be preserved??
+        Should ratio between table sizes be preserved??
         :return:
         '''
+        pass
 
     def fuse_data(self):
         '''
@@ -676,9 +697,12 @@ class Fuse():
         '''
         print("***Zlivanje podatkov..")
         object_types=[]
+        relations=[]
+        relational_matrices_keys=list(self.relation_matrices.keys())
+        constraint_matrices_keys=list(self.constraint_matrices.keys())
 
-        print('OBJEKTNI TIPI: ',self.tables_object_types)
-        for type_name in self.tables_object_types:
+        print('OBJEKTNI TIPI: ',self.object_types)
+        for type_name in self.object_types:
             object_types.append(fusion.ObjectType(type_name))
 
         matrices_of_relational_matrices=[] #seznam hrani vse mozne nabore matrik relacijskih matrik
@@ -704,16 +728,30 @@ class Fuse():
 
         #ustvarimo po eno zlivanje oz. latentni podatkovni model za vsako od kombinacij relacijskih in omejitvenih matrik
         if len(matrices_of_constraint_matrices)>0:
-            fusion_sets=[itertools.product(matrices_of_relational_matrices,matrices_of_constraint_matrices)]
+            fusion_sets=list(itertools.product(matrices_of_relational_matrices,matrices_of_constraint_matrices))
         else:
             fusion_sets=[(x,()) for x in matrices_of_relational_matrices]
 
         for fusion_set in fusion_sets:
-            print("FUSION SET: ",fusion_set)
+            print("FUSION SET: ")
+            print("\tRELATIONAL MATRICES:")
+            relational=fusion_set[0]
+            for i in range(len(self.relation_matrices)):
+                print("\t\t"+relational_matrices_keys[i])
+                print(relational[-1])
+                relational=relational[0]
+
+            print("\tCONSTRAINT MATRICES:")
+            constraint = fusion_set[0]
+            for i in range(len(self.constraint_matrices)):
+                print("\t\t" + constraint_matrices_keys[i])
+                print(constraint[-1])
+                constraint = constraint[0]
 
     def __init__(self,host,database,user,password):
             print('***Initcializacija..')
-            self.join_outmost_tables_mode = False
+            self.join_outmost_tables_mode = False #Ce True se pred zlivanjem stolpci obrobnih tabel (brez 'izhodnih' tujih kljucev) prepisejo v tabele, ki jih referencirajo
+            self.dummy_variable_treshold=20 #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
 
             self.foreign_keys=None
             self.primary_keys=None
@@ -724,13 +762,14 @@ class Fuse():
             self.constraint_matrices=None
             self.object_types=None
 
-            self.tables_object_types=[]
+            #self.tables_object_types=[]
             self.connect_to_postgreSQL(host,database,user,password)
             self.restore_from_checkpoint(host,database)
             #self.get_column_data_types() #hitreje: pridobi podatkovne tipe samo za stoplpce v vmesnih tabelah
             self.list_tables()
             self.presampling_mode=True if self.estimate_complexity()>=3 else False
             self.list_key_constraints()
+            self.list_object_types()
             self.list_connected_tables()
             self.list_tables_gte2_fk()
             if self.join_outmost_tables_mode:
