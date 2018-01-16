@@ -556,7 +556,8 @@ class Fuse():
                     header_fk_tmp.append(y[2])
         if table1==table2:
             #print("SELECT "+",".join(objects_table1[0])+','+",".join(header_fk_tmp)+" FROM "+table1+";")
-            self.cursor.execute("SELECT "+",".join(objects_table1[0])+','+",".join(header_fk_tmp)+" FROM "+table1+";")
+            #self.cursor.execute("SELECT "+",".join(objects_table1[0])+','+",".join(header_fk_tmp)+" FROM "+table1+";")
+            self.cursor.execute("SELECT "+",".join(["a."+x for x in objects_table1[0]])+','+",".join("b."+x for x in objects_table2[0])+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+" AND ".join(["a."+x[2]+" = "+"b."+x[4] for x in table_relations])+";")
         else:
             #print("SELECT "+",".join([table1+"."+x for x in objects_table1[0]])+','+",".join(table2+"."+x for x in objects_table2[0])+" FROM "+table1+" INNER JOIN "+table2+" ON "+" AND ".join([x[1]+"."+x[2]+" = "+x[3]+"."+x[4] for x in table_relations])+";")
             self.cursor.execute("SELECT "+",".join([table1+"."+x for x in objects_table1[0]])+','+",".join(table2+"."+x for x in objects_table2[0])+" FROM "+table1+" INNER JOIN "+table2+" ON "+" AND ".join([x[1]+"."+x[2]+" = "+x[3]+"."+x[4] for x in table_relations])+";")
@@ -709,7 +710,7 @@ class Fuse():
 
         matrices_of_relational_matrices=[] #seznam hrani vse mozne nabore matrik relacijskih matrik
         first=True
-        for relation_key in self.relation_matrices:
+        for relation_key in relational_matrices_keys:
             if first:
                 matrices_of_relational_matrices+=self.relation_matrices[relation_key]
                 first=False
@@ -719,14 +720,13 @@ class Fuse():
 
         matrices_of_constraint_matrices = []  # seznam hrani vse mozne nabore matrik omejitvenih matrik
         first = True
-        for relation_key in self.constraint_matrices:
+        for relation_key in constraint_matrices_keys:
             if first:
                 matrices_of_constraint_matrices += self.constraint_matrices[relation_key]
                 first = False
                 continue
             matrices_of_constraint_matrices = list(itertools.product(matrices_of_constraint_matrices, self.constraint_matrices.values[relation_key]))
         print("MATRICES OF CONSTRAINT MATRICES: ", matrices_of_constraint_matrices)
-
 
         #ustvarimo po eno zlivanje oz. latentni podatkovni model za vsako od kombinacij relacijskih in omejitvenih matrik
         if len(matrices_of_constraint_matrices)>0:
@@ -741,18 +741,24 @@ class Fuse():
             print("\tRELATIONAL MATRICES:")
             relational=fusion_set[0]
             for i in range(len(self.relation_matrices)):
-                print("\t\t"+relational_matrices_keys[i])
-                relational_matrix=np.array(relational[-1])
+                print("\t\t"+relational_matrices_keys[-i-1])
+                if i==len(self.relation_matrices)-1:
+                    relational_matrix=np.array(relational)
+                else:
+                    relational_matrix=np.array(relational[-1])
                 print("\t\t",relational_matrix.shape)
                 print(relational_matrix)
                 relational=relational[0]
-                related_objects=relational_matrices_keys[i].split(' ')
+                related_objects=relational_matrices_keys[-i-1].split(' ')
                 relations.append(fusion.Relation(relational_matrix,object_types[related_objects[0]],object_types[related_objects[1]]))
             print("\tCONSTRAINT MATRICES:")
-            constraint = fusion_set[0]
+            constraint = fusion_set[1]
             for i in range(len(self.constraint_matrices)):
-                print("\t\t" + constraint_matrices_keys[i])
-                constraint_matrix=np.array(constraint[-1])
+                print("\t\t" + constraint_matrices_keys[-i-1])
+                if i==len(self.constraint_matrices)-1:
+                    constraint_matrix=np.array(constraint)
+                else:
+                    constraint_matrix=np.array(constraint[-1])
                 print("\t\t",constraint_matrix.shape)
                 print(constraint_matrix)
                 constraint = constraint[0]
@@ -782,7 +788,6 @@ class Fuse():
             self.constraint_matrices=None
             self.object_types=None
 
-            #self.tables_object_types=[]
             self.connect_to_postgreSQL(host,database,user,password)
             self.restore_from_checkpoint(host,database)
             #self.get_column_data_types() #hitreje: pridobi podatkovne tipe samo za stoplpce v vmesnih tabelah
