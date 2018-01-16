@@ -643,8 +643,10 @@ class Fuse():
                             constraint_matrices[t] = []
                         constraint_matrices[t] += matrices
                     else:
+                        continue #Indikatorskih matrik za direktno povezane pare tabel ne gradimo, saj ne predstavljajo relacij med objekti, temvec zgolj razsiritev atributov
                         if not t + ' ' + t1 in relation_matrices:
                             relation_matrices[t + ' ' + t1] = []
+                        #Lahko zgradimo po eno za vsak stolpec (katere koli od) povezanih tabel
                         relation_matrices[t + ' ' + t1] += matrices
 
             '''if t in tables_linked_to_t:
@@ -762,6 +764,8 @@ class Fuse():
                 print("\t\t",constraint_matrix.shape)
                 print(constraint_matrix)
                 constraint = constraint[0]
+                related_objects = constraint_matrices_keys[-i - 1]
+                relations.append(fusion.Relation(constraint_matrix, object_types[related_objects], object_types[related_objects]))
             #Build new fusion graph
             fusion_graph = fusion.FusionGraph()
             fusion_graph.add_relations_from(relations)
