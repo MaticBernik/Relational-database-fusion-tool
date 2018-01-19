@@ -13,6 +13,7 @@ import itertools
 from skfusion import fusion
 from pathlib import Path
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+import random
 
 
 
@@ -335,6 +336,9 @@ class Fuse():
             -table excluded_tables contains a list of names of tables that have been joined and therefore shuld be excluded from further processing.
             -dictionary modified_tables contains modified tables (with aditional columns from joined tables) that shuld be used for further work instead of original tables within a database.
         '''
+        '''
+        Alternativno: namesto da se hrani celotne modificirane matrike, shrani le SQL poizvedbe za njihovo sestavo
+        '''
         print("***pridruzevanje zunanjih tabel...")
         #print(self.excluded_tables)
         #print(self.modified_tables)
@@ -416,7 +420,6 @@ class Fuse():
                     self.checkpoint_file.write("\t".join([str(z) for z in y])+"\n")
                 self.checkpoint_file.write("!\n")
             self.checkpoint_file.write("\n")
-
 
     def get_column_data_types_tables_gte2_fk(self):
         '''
@@ -685,8 +688,31 @@ class Fuse():
         self.checkpoint_file.write("\n")
 
 
+    def test_references_same_table_more_than_once(self,table1,table2):
+        '''
+        :return:    True; if table1 references table2 via FK >=2 times
+                    False; else
+        '''
+        foreign_keys = [x[4] for x in self.foreign_keys if x[1] == table1 and x[3]==table2]
+        c=Counter(foreign_keys)
+        return all(x>=2 for x in c.values())
+
+    def test_references_same_table_more_than_once_composite_PK(self,table1,table2):
+        '''
+
+        :return:    True; if table1 references table2 via FK >=2 times AND table2 has composite PK
+                    False; else
+
+        https://www.postgresql.org/docs/9.0/static/catalog-pg-constraint.html
+        '''
+        return self.test_references_same_table_more_than_once(table1,table2) and len(x for x in self.primary_keys if x[0]==table2)>=2
+
     def presample(self):
         '''
+        Sample table relations so that no Relation matrix dimension is greater than the user specified bound.
+        Method is randomly selecting lines from tables that reference at least two tables via FK until SUM of implicitly selected objects
+        from any pair of referenced tables reaches specified limit.
+
         Try different sampling methods to downsize tables.
         !!!!!
         PROBLEM: ROWS REFERENCED FROM SAMPLED TABLE1 SHOULD BE INCLUDED IN SAMPLE REPRESENTING TABLE2
@@ -694,7 +720,38 @@ class Fuse():
         Should ratio between table sizes be preserved??
         :return:
         '''
-        pass
+        self.sample={}
+
+        for t in self.tables_gte2_fk:
+            foreign_keys = [x for x in self.foreign_keys if x[1] == t]
+            referenced_tables = [x for x in self.table_relations if x[0] == t]
+            table_ids=self.get_object_ids(t)
+            referenced_tables_ids={}
+            columns_select = ""
+            for x in referenced_tables:
+                if not x in self.sample:
+                    self.sample[x]=[]
+                referenced_tables_ids[x]=self.get_object_ids(x)
+                reffering_columns=[y[2] for y in foreign_keys if y[3]==x]
+                columns_select+=','+','.join(reffering_columns)
+                if self.test_references_same_table_more_than_once(t,x):
+                    print("!!!NAPAKA: dopolni kodo da bo pokrivala tudi primere ko t1 veckrat referencira t2!!")
+            columns_select=columns_select[1:]
+            number_selected_objects=0
+            while number_selected_objects<self.max_number_of_objects and len(table_ids[1]>0):
+                #later select multiple rows at once!
+                relation_id=random.choice(table_ids[1])
+                table_ids[1].remove(relation_id)
+
+                self.cursor.execute("SELECT "+columns_select+" FROM "+t+" WHERE "+','.join([referenced_tables_ids[0]+"="+relation_id[x] for x in range(len(table_ids[0]))])+';')
+                relation_row=self.cursor.fetchall()
+
+                #sum of selected rows for a pair of referenced tables with largest sample size
+                nr_rows_tables=[len(self.sample[x]) for x in referenced_tables]
+                number_selected_objects=max(nr_rows_tables)
+                nr_rows_tables.remove(number_selected_objects)
+                number_selected_objects+=max(nr_rows_tables)
+
 
     def fuse_data(self):
         '''
@@ -782,6 +839,7 @@ class Fuse():
             print('***Initcializacija..')
             self.join_outmost_tables_mode = False #Ce True se pred zlivanjem stolpci obrobnih tabel (brez 'izhodnih' tujih kljucev) prepisejo v tabele, ki jih referencirajo
             self.dummy_variable_treshold=20 #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
+            self.max_number_of_objects=20
 
             self.foreign_keys=None
             self.primary_keys=None
