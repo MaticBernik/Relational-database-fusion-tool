@@ -14,6 +14,7 @@ from skfusion import fusion
 from pathlib import Path
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 import random
+import psutil
 
 
 
@@ -79,6 +80,15 @@ class Fuse():
         else:
             return 5
 
+    def estimate_relation_matrix_dimension_constraint(self):
+        '''
+        Based on system resurces (specifically available mamory) proposes upper limit of objects per relation,
+        to constraint size of relation matrices.
+        :return: Proposed limit for number of objects (integer).
+        '''
+        svmem=psutil.virtual_memory()
+        print(svmem)
+        return 20
 
     def restore_from_checkpoint(self,host,database):
         '''
@@ -288,6 +298,12 @@ class Fuse():
             self.checkpoint_file.write('\t'.join(key) + "\n")
         self.checkpoint_file.write("\n")
 
+        '''fk_constraint_names=[x[0] for x in self.foreign_keys]
+        fk_constraint_names_repeatabillity=Counter(fk_constraint_names)
+        for y in fk_constraint_names_repeatabillity:
+            if fk_constraint_names_repeatabillity[y]>1:
+                print("GTE2: ",[x for x in self.foreign_keys if x[0]==y])'''
+
 
     def list_connected_tables(self):
         '''
@@ -390,6 +406,7 @@ class Fuse():
             tables_to_modify=tables_to_modify_tmp
 
         for t in tables_to_modify:
+            "POPRAVI SQL QUERY ZA SESTAVLJENE TUJE KLJUCE IN VECKRATNE REFERENCE"
             #print(t)
             sql_query="SELECT * FROM"
             last_link=t[len(t)-1]
@@ -474,25 +491,29 @@ class Fuse():
         Only 1 matrix if binarization of attribute(column_id) is not required.
         '''
         matrices=[]
-        print("***Generiranje matrik za stolpec vmesne matrike..")
+        print("###Generiranje matrik za stolpec vmesne matrike..")
         objects_table1 = self.get_object_ids(table1)
         objects_table2 = self.get_object_ids(table2)
         # print("OBJECTS TABLE 1 ",objects_table1)
         # print("OBJECTS TABLE 2 ",objects_table2)
         table_table1_fk=[x for x in self.foreign_keys if x[1]==table and x[3]==table1]
+        table_table1_fk_names=set([x[0] for x in table_table1_fk])
         table_table2_fk=[x for x in self.foreign_keys if x[1]==table and x[3]==table2]
+        table_table2_fk_names=set([x[0] for x in table_table2_fk])
 
-        if len([x for x in self.primary_keys if x[0]==table1])<len(table_table1_fk) or len([x for x in self.primary_keys if x[0]==table2])<len(table_table2_fk):
+        '''if len([x for x in self.primary_keys if x[0]==table1])<len(table_table1_fk) or len([x for x in self.primary_keys if x[0]==table2])<len(table_table2_fk):
             print("###PROBLEM: ocitno sta tabeli povezani preko vecih sklopov stolpcev/kljucev!! - REZULTAT NE BO 'OPTIMALEN'")
             print("###SANITY CHECK: Je st. tujih kljucev veckratnik stevila stolpcev primarnega kljuca? ")
             print(str(len(table_table1_fk))+' = n * '+str(len([x for x in self.primary_keys if x[0]==table1]))+"???  ---> ",len(table_table1_fk)%len([x for x in self.primary_keys if x[0]==table1])==0)
-            print(str(len(table_table2_fk))+' = n * '+str(len([x for x in self.primary_keys if x[0]==table2]))+"???  ---> ",len(table_table2_fk)%len([x for x in self.primary_keys if x[0]==table2])==0)
+            print(str(len(table_table2_fk))+' = n * '+str(len([x for x in self.primary_keys if x[0]==table2]))+"???  ---> ",len(table_table2_fk)%len([x for x in self.primary_keys if x[0]==table2])==0)'''
 
         if len(objects_table1[1]) == 0 or len(objects_table2[1]) == 0:
             return []
 
-        print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
-        self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
+        print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk if x[0]==y]) for y in table_table1_fk_names])+" INNER JOIN "+table2+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk if x[0]==y]) for y in table_table2_fk_names])+';')
+        self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk if x[0]==y]) for y in table_table1_fk_names])+" INNER JOIN "+table2+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk if x[0]==y]) for y in table_table2_fk_names])+';')
+        #print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
+        #self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         rows=self.cursor.fetchall()
         #print(rows)
 
@@ -652,17 +673,6 @@ class Fuse():
                         #Lahko zgradimo po eno za vsak stolpec (katere koli od) povezanih tabel
                         relation_matrices[t + ' ' + t1] += matrices
 
-            '''if t in tables_linked_to_t:
-                #Kadar tabela referencira samo sebe, zgradi se omejitveno matriko
-                for c in [x for x in self.column_fusion if t + '_' in x]:
-                    c = c[len(t + '_'):]
-                    foreign_keys = [x for x in self.foreign_keys if x[1] == t and x[3] == t]
-                    for foreign_key in foreign_keys:
-                        matrices=self.gen_matrices_for_column(foreign_key,foreign_key,t,c)
-                    if not t in constraint_matrices:
-                        constraint_matrices[t]=[]
-                    constraint_matrices[t]+=matrices'''
-
         self.relation_matrices=relation_matrices
         self.constraint_matrices=constraint_matrices
         #print("RELATION MATRICES: ",relation_matrices)
@@ -713,44 +723,75 @@ class Fuse():
         Method is randomly selecting lines from tables that reference at least two tables via FK until SUM of implicitly selected objects
         from any pair of referenced tables reaches specified limit.
 
-        Try different sampling methods to downsize tables.
-        !!!!!
-        PROBLEM: ROWS REFERENCED FROM SAMPLED TABLE1 SHOULD BE INCLUDED IN SAMPLE REPRESENTING TABLE2
+        Try out different sampling methods to downsize relational matrices.
 
         Should ratio between table sizes be preserved??
+        https://www.postgresql.org/docs/9.0/static/infoschema-referential-constraints.html
+        
         :return:
         '''
+        print("***Vzorcenje relacij...")
         self.sample={}
-
         for t in self.tables_gte2_fk:
+            table_is_ot=True if t in self.object_types else False
             foreign_keys = [x for x in self.foreign_keys if x[1] == t]
-            referenced_tables = [x for x in self.table_relations if x[0] == t]
+            foreign_keys_names=set([x[0] for x in foreign_keys])
+            referenced_tables = [x[1] for x in self.table_relations if x[0] == t]
             table_ids=self.get_object_ids(t)
             referenced_tables_ids={}
+            reffering_columns=[]
+            reffering_columns_ordered_list=[]
             columns_select = ""
+            for x in foreign_keys_names:
+                fk_x=[y for y in foreign_keys if y[0]==x]
+                reffering_columns=[y[2] for y in fk_x]
+                reffering_columns=[y[0] for y in itertools.groupby(reffering_columns)]
+                reffering_columns_ordered_list=reffering_columns_ordered_list+[reffering_columns]
+                columns_select += ',' + ','.join(reffering_columns)
+            columns_select = columns_select[1:]
+
             for x in referenced_tables:
                 if not x in self.sample:
                     self.sample[x]=[]
                 referenced_tables_ids[x]=self.get_object_ids(x)
-                reffering_columns=[y[2] for y in foreign_keys if y[3]==x]
-                columns_select+=','+','.join(reffering_columns)
-                if self.test_references_same_table_more_than_once(t,x):
-                    print("!!!NAPAKA: dopolni kodo da bo pokrivala tudi primere ko t1 veckrat referencira t2!!")
-            columns_select=columns_select[1:]
+
             number_selected_objects=0
-            while number_selected_objects<self.max_number_of_objects and len(table_ids[1]>0):
+            while number_selected_objects<self.max_number_of_objects and len(table_ids[1])>0:
                 #later select multiple rows at once!
                 relation_id=random.choice(table_ids[1])
                 table_ids[1].remove(relation_id)
-
-                self.cursor.execute("SELECT "+columns_select+" FROM "+t+" WHERE "+','.join([referenced_tables_ids[0]+"="+relation_id[x] for x in range(len(table_ids[0]))])+';')
-                relation_row=self.cursor.fetchall()
+                self.cursor.execute("SELECT "+columns_select+" FROM "+t+" WHERE "+','.join([str(table_ids[0][x])+"='"+str(relation_id[x])+"'" for x in range(len(table_ids[0]))])+';')
+                relation_row=self.cursor.fetchall()[0]
+                if table_is_ot:
+                    if not t in self.sample:
+                        self.sample[t]=[]
+                    self.sample[t].append(relation_id)
+                    self.sample[t] = list(set(self.sample[t]))
+                for x in foreign_keys_names:
+                    fk_x=[y for y in foreign_keys if y[0]==x] #choose whole group of fk with same id
+                    referenced_table=fk_x[0][3] #table to which fks point to
+                    referenced_table_column_order=referenced_tables_ids[referenced_table][0] #the order in which column values of referenced table must be put
+                    #Vrstni red znotraj posameznih podseznaamov garantiran?
+                    ordered_column_list=[[z[2] for z in fk_x if z[4]==y] for y in referenced_table_column_order] #try to get ordered column values of this table from ordered columns of referenced table
+                    #id=tuple([relation_row[reffering_columns_ordered_list.index(y):reffering_columns_ordered_list.index(y)+len(y)] for y in ordered_column_list])
+                    #id=tuple([relation_row[reffering_columns_ordered_list.index(y):reffering_columns_ordered_list.index(y)+len(y)] for y in ordered_column_list])
+                    id=[]
+                    for y in ordered_column_list:
+                        key_position=reffering_columns_ordered_list.index(y)
+                        starting_col_indx=0
+                        for i in range(key_position):
+                            starting_col_indx+=len(reffering_columns_ordered_list[i])
+                        end_col_indx=starting_col_indx+len(y)
+                        id.append(relation_row[starting_col_indx:end_col_indx])
+                    self.sample[referenced_table]+=id
+                    self.sample[referenced_table]=list(set(self.sample[referenced_table]))
 
                 #sum of selected rows for a pair of referenced tables with largest sample size
                 nr_rows_tables=[len(self.sample[x]) for x in referenced_tables]
                 number_selected_objects=max(nr_rows_tables)
                 nr_rows_tables.remove(number_selected_objects)
                 number_selected_objects+=max(nr_rows_tables)
+        print("###SAMPLE:",self.sample)
 
 
     def fuse_data(self):
@@ -839,7 +880,7 @@ class Fuse():
             print('***Initcializacija..')
             self.join_outmost_tables_mode = False #Ce True se pred zlivanjem stolpci obrobnih tabel (brez 'izhodnih' tujih kljucev) prepisejo v tabele, ki jih referencirajo
             self.dummy_variable_treshold=20 #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
-            self.max_number_of_objects=20
+            self.max_number_of_objects=self.estimate_relation_matrix_dimension_constraint()
 
             self.foreign_keys=None
             self.primary_keys=None
@@ -854,7 +895,7 @@ class Fuse():
             self.restore_from_checkpoint(host,database)
             #self.get_column_data_types() #hitreje: pridobi podatkovne tipe samo za stoplpce v vmesnih tabelah
             self.list_tables()
-            self.presampling_mode=True if self.estimate_complexity()>=3 else False
+            self.presampling_mode=True if self.estimate_complexity()>=1 else False
             self.list_key_constraints()
             self.list_object_types()
             self.list_connected_tables()
@@ -875,5 +916,5 @@ class Fuse():
 
 
 if __name__ == "__main__":
-    fuse = Fuse(host='192.168.217.128', database='avtomobilizem', user='postgres', password='geslo123')
+    fuse = Fuse(host='192.168.217.128', database='avtomobilizem1', user='postgres', password='geslo123')
     #fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123')
