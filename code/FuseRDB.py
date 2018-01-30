@@ -500,7 +500,7 @@ class Fuse():
                 column_fusion[c_id]=self.column_data_type[c_id]
         self.column_fusion=column_fusion
 
-    def gen_matrices_for_column(self,table1,table2,table,column_id):
+    def gen_matrices_for_column(self,fk_link1,fk_link2,table,column_id):
         '''
         :param table1:
         :param table2:
@@ -509,6 +509,9 @@ class Fuse():
         :return:list of relational matrices.
         Only 1 matrix if binarization of attribute(column_id) is not required.
         '''
+        table1=fk_link1[2]
+        table2=fk_link2[2]
+
         print("GENERATE RELATION MATRIX",table1,table2,table+'->'+column_id)
         matrices=[]
         print("###Generiranje matrik za stolpec vmesne matrike..")
@@ -516,10 +519,12 @@ class Fuse():
         objects_table2 = self.get_object_ids(table2)
         # print("OBJECTS TABLE 1 ",objects_table1)
         # print("OBJECTS TABLE 2 ",objects_table2)
-        table_table1_fk=[x for x in self.foreign_keys if x[1]==table and x[3]==table1]
+        '''table_table1_fk=[x for x in self.foreign_keys if x[1]==table and x[3]==table1]
         table_table1_fk_names=set([x[0] for x in table_table1_fk])
         table_table2_fk=[x for x in self.foreign_keys if x[1]==table and x[3]==table2]
-        table_table2_fk_names=set([x[0] for x in table_table2_fk])
+        table_table2_fk_names=set([x[0] for x in table_table2_fk])'''
+        table_table1_fk = [x for x in self.foreign_keys if x[1] == table and x[3] == table1 and x[0]==fk_link1[0]]
+        table_table2_fk = [x for x in self.foreign_keys if x[1] == table and x[3] == table2 and x[0]==fk_link2[0]]
 
         '''if len([x for x in self.primary_keys if x[0]==table1])<len(table_table1_fk) or len([x for x in self.primary_keys if x[0]==table2])<len(table_table2_fk):
             print("###PROBLEM: ocitno sta tabeli povezani preko vecih sklopov stolpcev/kljucev!! - REZULTAT NE BO 'OPTIMALEN'")
@@ -529,8 +534,9 @@ class Fuse():
 
         if len(objects_table1[1]) == 0 or len(objects_table2[1]) == 0:
             return []
-        #CE JE MED DVEMA TABELAMA VEC FK POVEZAV KATERO IZBRATI ZA ZDRUZITEV TABEL??
-        sql_query="SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk if x[0]==y]) for y in table_table1_fk_names])+" INNER JOIN "+table2+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk if x[0]==y]) for y in table_table2_fk_names])+';'
+        #CE JE MED DVEMA TABELAMA VEC FK POVEZAV KATERO IZBRATI ZA ZDRUZITEV TABEL?? --> TRETIRAJ LOCENO!! namesto po povezanih tabelah se sprehajaj po kombinacijah tujih kljucev
+        #sql_query="SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk if x[0]==y]) for y in table_table1_fk_names])+" INNER JOIN "+table2+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk if x[0]==y]) for y in table_table2_fk_names])+';'
+        sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+';'
         if self.presampling_mode:
             print("PRESAMPLE")
         print(sql_query)
@@ -538,7 +544,6 @@ class Fuse():
         #print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         #self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         rows=self.cursor.fetchall()
-        print(rows)
 
         nr_columns=1
         print("PODATKOVNI TIP STOLPCA: ",self.column_data_type[table + ' ' + column_id])
@@ -558,10 +563,14 @@ class Fuse():
         for i in range(nr_columns):
             R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
             matrices.append(R)
+        column_order_row_o1=[x[4].strip() for x in table_table1_fk]
+        column_order_row_o2 = [x[4].strip() for x in table_table2_fk]
         for row in rows:
             #print(row)
-            c1=tuple(row[0:len(objects_table1[0])])
-            c2=tuple(row[len(objects_table1[0]):-nr_columns])
+            c1=row[0:len(objects_table1[0])]
+            c1=tuple([c1[column_order_row_o1.index(x)] for x in objects_table1[0]])
+            c2=row[len(objects_table1[0]):-nr_columns]
+            c2 = tuple([c2[column_order_row_o2.index(x)] for x in objects_table2[0]])
             v=row[-nr_columns:]
             for i in range(nr_columns):
                 matrices[i][objects_table1[1].index(c1)][objects_table2[1].index(c2)]=v[i]
@@ -578,7 +587,7 @@ class Fuse():
         rows=list(set(self.cursor.fetchall()))
         return [pk_columns,rows]
 
-    def gen_indicator_matrix_for_relation(self,table1,table2):
+    def gen_indicator_matrix_for_relation(self,table1,fk_link):
         '''
         For two tables related via Foreign Key constraint create matrix of dimensions |objects in table1| x |objects in table2|,
         that has 1 in every cell for actually related objects and 0 elsewhere.
@@ -586,11 +595,12 @@ class Fuse():
         :param table2:
         :return:
         '''
+        table2 = fk_link[2]
         objects_table1=self.get_object_ids(table1)
         objects_table2=self.get_object_ids(table2)
         #print("OBJECTS TABLE 1 ",objects_table1)
         #print("OBJECTS TABLE 2 ",objects_table2)
-        table_relations=[x for x in self.foreign_keys if x[1]==table1 and x[3]==table2]
+        table_relations=[x for x in self.foreign_keys if x[1]==table1 and x[3]==table2 and x[0]==fk_link[0]]
 
         if len(objects_table1[1]) == 0 or len(objects_table2[1]) == 0:
             return []
@@ -666,25 +676,30 @@ class Fuse():
         tables=set([x for x,y in self.table_relations])
         for t in tables:
             tables_linked_to_t=[y for x,y in self.table_relations if x==t]
+            fk_names_linked_to_t=set([(y[0],y[1],y[3]) for y in self.foreign_keys if y[1]==t])
+            print("TTTTTT:",t)
+            print("FKNAMESLINKED:",fk_names_linked_to_t)
             if len(tables_linked_to_t)>=2:
                 #Zgradi relacijske matrike za posredno povezane tabele.
                 #self.tables_object_types+=tables_linked_to_t
-                for t1,t2 in itertools.combinations(tables_linked_to_t,2):
-                    #print("T1: ",t1,"T2: ",t2)
+                #for t1,t2 in itertools.combinations(tables_linked_to_t,2):
+                for t1,t2 in itertools.combinations(fk_names_linked_to_t,2):
+                    print("T1: ",t1,"T2: ",t2)
                     for c in [x for x in self.column_fusion if t+' ' in x]:
                         # Kaj narediti v primeru, ko na neko tabelo kaze vec tujih kljucev??!! Vrstice so lahko medsebojno drugace povezane? Se ena gnezdena zanka?
                         # Posebej problematicni primer: tabela1 referencira tabelo 2, ki ima primarni kljuc sestavljen iz vecih stolpcev preko vec kot enega samega sklopa stolpcev..
                         # npr. orodje preko enega sklopa stolpcev referencira drzavo prodaje, preko drugega pa drzavo izdelave. Ce pa je PK tabele drzava sestavljen iz vec kot enega stolpca, kako lociti??
                         c=c[len(t+' '):]
                         matrices=self.gen_matrices_for_column(t1,t2,t,c)
-                        if not t1+' '+t2 in relation_matrices:
-                            relation_matrices[t1 + ' ' + t2] = []
-                        relation_matrices[t1+' '+t2]+=matrices
+                        if not t1[2]+' '+t2[2] in relation_matrices:
+                            relation_matrices[t1[2] + ' ' + t2[2]] = []
+                        relation_matrices[t1[2]+' '+t2[2]]+=matrices
             if len(tables_linked_to_t)>=1:
                 #Zgradi relacijske matrike za vsako direktno povezavo obravnavane tabele.
-                for t1 in tables_linked_to_t:
+                #for t1 in tables_linked_to_t:
+                for t1 in fk_names_linked_to_t:
                     matrices=self.gen_indicator_matrix_for_relation(t,t1)
-                    if t==t1:
+                    if t==t1[2]:
                         if not t in constraint_matrices:
                             constraint_matrices[t] = []
                         constraint_matrices[t] += matrices
