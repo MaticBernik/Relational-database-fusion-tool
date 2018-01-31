@@ -493,6 +493,7 @@ class Fuse():
         '''
         print("***Izbor stolpcev primernih za zlivanje..")
         numerical_data_types=['smallint','integer','bigint','decimal','numeric','real','double precision','smallserial','serial','bigserial']
+        numerical_data_types+=['text','str'] #uporaba v kombinaciji z razbitjem na mnozico indikatorskih spremenljivk
         column_fusion={}
         fk_ids=[id[0] for id in self.foreign_keys]
         for c_id in self.column_data_type:
@@ -515,8 +516,12 @@ class Fuse():
         print("GENERATE RELATION MATRIX",table1,table2,table+'->'+column_id)
         matrices=[]
         print("###Generiranje matrik za stolpec vmesne matrike..")
-        objects_table1 = self.get_object_ids(table1)
-        objects_table2 = self.get_object_ids(table2)
+        if self.presampling_mode:
+            objects_table1=self.sample[table1]
+            objects_table2=self.sample[table2]
+        else:
+            objects_table1 = self.get_object_ids(table1)
+            objects_table2 = self.get_object_ids(table2)
         # print("OBJECTS TABLE 1 ",objects_table1)
         # print("OBJECTS TABLE 2 ",objects_table2)
         '''table_table1_fk=[x for x in self.foreign_keys if x[1]==table and x[3]==table1]
@@ -536,18 +541,37 @@ class Fuse():
             return []
         #CE JE MED DVEMA TABELAMA VEC FK POVEZAV KATERO IZBRATI ZA ZDRUZITEV TABEL?? --> TRETIRAJ LOCENO!! namesto po povezanih tabelah se sprehajaj po kombinacijah tujih kljucev
         #sql_query="SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk if x[0]==y]) for y in table_table1_fk_names])+" INNER JOIN "+table2+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk if x[0]==y]) for y in table_table2_fk_names])+';'
-        sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+';'
         if self.presampling_mode:
-            print("PRESAMPLE")
+            sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])
+            sql_query+=' WHERE ( '
+            for y in self.sample[table1][1]:
+                print('yYYYYYY',y)
+                print('0000',self.sample[table1][0])
+                for x in range(len(self.sample[table1][0])):
+                    sql_query+="a."+self.sample[table1][0][x]+" = '"+y[x]+"' OR "
+            sql_query = sql_query[:-len(" OR ")]
+            sql_query+=" ) AND ( "
+            for y in self.sample[table2][1]:
+                for x in range(len(self.sample[table2][0])):
+                    sql_query += "b."+self.sample[table2][0][x] + " = '" + y[x] + "' OR "
+            sql_query=sql_query[:-len(" OR ")]
+            sql_query+=');'
+
+            #sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+' WHERE ('+'OR '.join([' OR '.join([self.sample[table1][0][x]+" = "+y[x] for x in range(len(self.sample[table1][0]))]) for y in self.sample[table1][1]])+") AND ("+'OR '.join([' OR '.join([self.sample[table2][0][x]+" = "+y[x] for x in range(len(self.sample[table2[0]]))]) for y in self.sample[table2][1]])
+            #sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+' WHERE ('+'OR '.join([' OR '.join([y[0][x]+" = "+list(y[1])[x] for x in range(len(y[0]))]) for y in self.sample[table1]])+") AND ("+'OR '.join([' OR '.join([y[0][x]+" = "+list(y[1])[x] for x in range(len(y[0]))]) for y in self.sample[table2]])
+
+        else:
+            sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+';'
+
         print(sql_query)
         self.cursor.execute(sql_query)
         #print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         #self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         rows=self.cursor.fetchall()
+        rows = np.array(rows)
 
         nr_columns=1
-        print("PODATKOVNI TIP STOLPCA: ",self.column_data_type[table + ' ' + column_id])
-        if self.column_data_type[table+' '+column_id][1]=="str":
+        if self.column_data_type[table+' '+column_id][1]=="str" or self.column_data_type[table+' '+column_id][1]=="text":
             if len(set(rows[:,-1]))>self.dummy_variable_treshold:
                 print("###Stolpec "+table+"."+column_id+" ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.")
                 return []
@@ -555,10 +579,12 @@ class Fuse():
             rows[:,-1]=labelencoder.fit_transform(rows[:,-1])
             nr_columns=len(labelencoder.classes_)
             onehotencoder = OneHotEncoder(categorical_features=[-1])
-            rows=onehotencoder.fit_transform(rows).toarray()
+            dummy_variables=onehotencoder.fit_transform(rows[:,-1].reshape(-1, 1)).toarray()
+            rows=np.delete(rows,-1,1)
+            rows=np.append(rows,dummy_variables,1)
             #dummy variable trap?
-            print(rows)
             #move dummy variables from begining to end of table!
+
 
         for i in range(nr_columns):
             R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
@@ -566,14 +592,19 @@ class Fuse():
         column_order_row_o1=[x[4].strip() for x in table_table1_fk]
         column_order_row_o2 = [x[4].strip() for x in table_table2_fk]
         for row in rows:
-            #print(row)
             c1=row[0:len(objects_table1[0])]
-            c1=tuple([c1[column_order_row_o1.index(x)] for x in objects_table1[0]])
-            c2=row[len(objects_table1[0]):-nr_columns]
-            c2 = tuple([c2[column_order_row_o2.index(x)] for x in objects_table2[0]])
+            #REMOVE .strip() quickfix
+            c1=tuple([c1[column_order_row_o1.index(x)].strip() for x in objects_table1[0]])
+            #c2=row[len(objects_table1[0]):-nr_columns]
+            c2 = row[len(objects_table1[0]):-nr_columns]
+            c2 = tuple([c2[column_order_row_o2.index(x)].strip() for x in objects_table2[0]])
+
+
             v=row[-nr_columns:]
             for i in range(nr_columns):
-                matrices[i][objects_table1[1].index(c1)][objects_table2[1].index(c2)]=v[i]
+                print(objects_table1)
+                print(objects_table2)
+                matrices[i][list(objects_table1[1]).index(c1)][list(objects_table2[1]).index(c2)]=v[i]
         return matrices
 
     def get_object_ids(self,table):
@@ -796,14 +827,14 @@ class Fuse():
                 relation_row=self.cursor.fetchall()[0]
                 if table_is_ot:
                     if not t in self.sample:
-                        self.sample[t]=set()
-                    self.sample[t].add(tuple(relation_id))
+                        self.sample[t]=[table_ids[0],set()]
+                    self.sample[t][1].add(tuple(relation_id))
                     #self.sample[t] = list(set(self.sample[t]))
 
                 for referenced_table in referenced_tables:
-                    if not referenced_table in self.sample:
-                        self.sample[referenced_table] = set()
                     referenced_tables_ids[referenced_table] = self.get_object_ids(referenced_table)
+                    if not referenced_table in self.sample:
+                        self.sample[referenced_table] = [referenced_tables_ids[referenced_table][0],set()]
                     #id = [tuple([[relation_row[reffering_columns_ordered_list.index(z[2])] for z in fk_x if z[4] == y]]) for y in referenced_tables_ids[x][0]]
                     referenced_table_fk_names=set([x[0] for x in foreign_keys if x[3]==referenced_table])
                     for fk_name in referenced_table_fk_names:
@@ -813,11 +844,11 @@ class Fuse():
                             column=[z[2] for z in fk if z[4]==fk_column][0]
                             value=relation_row[reffering_columns_ordered_list.index(column)]
                             id.append(value)
-                        self.sample[referenced_table].add(tuple(id))
+                        self.sample[referenced_table][1].add(tuple(id))
                         #self.sample[referenced_table]=set(self.sample[referenced_table])
 
                 #sum of selected rows for a pair of referenced tables with largest sample size
-                nr_rows_tables=[len(self.sample[x]) for x in referenced_tables]
+                nr_rows_tables=[len(self.sample[x][1]) for x in referenced_tables]
                 number_selected_objects=max(nr_rows_tables)
                 nr_rows_tables.remove(number_selected_objects)
                 number_selected_objects+=max(nr_rows_tables)
