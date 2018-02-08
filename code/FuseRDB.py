@@ -115,6 +115,7 @@ class Fuse():
         relation_matrices_section=False
         constraint_matrices_section=False
         object_types_section = False
+        sample_section=False
 
         for line in self.checkpoint_file:
             if line in ['\n', '\r\n']:
@@ -127,6 +128,7 @@ class Fuse():
                 relation_matrices_section = False
                 constraint_matrices_section = False
                 object_types_section = False
+                sample_section=False
                 continue
             elif "#FOREIGN KEYS" in line:
                 print("###Nalagam seznam tujih kljucev..")
@@ -171,6 +173,14 @@ class Fuse():
                 self.object_types=[]
                 object_types_section=True
                 continue
+            elif "#SAMPLE" in line:
+                print("###Nalagam vzorec podatkov...")
+                self.sample={}
+                self.sample_tables=set()
+                sample_section = True
+                key_next=True
+                header_next=False
+                continue
 
 
             if line[len(line)-1]=="\n":
@@ -200,12 +210,18 @@ class Fuse():
                         tabela[i]=None
                 self.tables.append(tabela)
             elif relation_matrices_section:
-                if line=='!':
+                if line=='!!':
                     key_next=True
                     if key_name and len(data)>0:
                         if key_name not in  self.relation_matrices:
                             self.relation_matrices[key_name]=[]
                         self.relation_matrices[key_name].append(np.array(data))
+                elif line=='!':
+                    if key_name and len(data)>0:
+                        if key_name not in  self.relation_matrices:
+                            self.relation_matrices[key_name]=[]
+                        self.relation_matrices[key_name].append(np.array(data))
+                    data=[]
                 elif key_next:
                     key_name=line
                     data=[]
@@ -213,12 +229,18 @@ class Fuse():
                 else:
                     data.append([float(x) for x in line.split("\t")])
             elif constraint_matrices_section:
-                if line=='!':
+                if line=='!!':
                     key_next=True
                     if key_name and len(data)>0:
                         if key_name not in self.constraint_matrices:
                             self.constraint_matrices[key_name]=[]
                         self.constraint_matrices[key_name].append(np.array(data))
+                elif line=='!':
+                    if key_name and len(data)>0:
+                        if key_name not in self.constraint_matrices:
+                            self.constraint_matrices[key_name]=[]
+                        self.constraint_matrices[key_name].append(np.array(data))
+                    data=[]
                 elif key_next:
                     key_name=line
                     data=[]
@@ -227,9 +249,49 @@ class Fuse():
                     data.append([float(x) for x in line.split("\t")])
             elif object_types_section:
                 self.object_types.append(line.split("\t"))
+            elif sample_section:
+                if line=='!':
+                    key_next=True
+                    if key_name and len(data)>0:
+                        if key_name not in self.sample:
+                            self.sample[key_name]=[[],set()]
+                        set_to_add=self.sample[key_name][1]
+                        self.sample[key_name][1].update(tuple(data))
+                elif key_next:
+                    key_name=line
+                    self.sample_tables.add(key_name)
+                    data=[]
+                    key_next=False
+                    header_next=True
+                    if key_name not in self.sample:
+                        self.sample[key_name] = [[], set()]
+                else:
+                    if header_next:
+                        self.sample[key_name][0]+=line.split('\t')
+                        data_types_postgres=[self.column_data_type[key_name+' '+x][1] for x in self.sample[key_name][0]]
+                        print("DATA TYPES POSTGRES",data_types_postgres)
+                        data_types_python=[self.postgres_to_python_data_types[x.upper()] if x.upper() in self.postgres_to_python_data_types else 'str' for x in data_types_postgres]
+                        print("DATA TYPES PYTHON",data_types_python)
+                        header_next=False
+                    else:
+                        new_data=line.split("\t")
+                        new_data_parsed=[]
+                        for x in range(len(new_data)):
+                            if data_types_python[x]=='str':
+                                #nepotrebno
+                                new_data_parsed.append(str(new_data[x]))
+                            elif data_types_python[x]=='integer':
+                                new_data_parsed.append(int(new_data[x]))
+                            elif data_types_python[x] == 'float':
+                                new_data_parsed.append(float(new_data[x]))
+                            else:
+                                print("###Nepodprt podatkovni tip!!")
+
+                        data.append(tuple(new_data_parsed))
 
         self.checkpoint_file.seek(0, 2)
 
+        print("SAMPLE TABLES",self.sample_tables)
         '''print("FOREIGN KEYS: ",self.foreign_keys)
         print("EXCLUDED TABLES: ",self.excluded_tables)
         #print("MODIFIED TABLES: ",self.modified_tables)
@@ -348,7 +410,7 @@ class Fuse():
         For every data table in database lists all column and data type it holds.
         As a result it sets an object variable with dictionary where each entry has form
         id: (column,data_type) ; where:
-            id - key string formed as table name joined with column name using underscore character
+            id - key string formed as table name joined with column name using space character
             column - name of a column
             data_type - type of data stored in column
         '''
@@ -363,6 +425,15 @@ class Fuse():
                 column_types[t[2]+' '+c[0]]=c
         #return column_types
         self.column_data_type=column_types
+
+    def list_table_columns(self,table):
+        '''
+        List names of columns for given table name;
+        :param table: name of the table
+        :return: list of names columns contained within specified table
+        '''
+        self.cursor.execute("SELECT column_name,data_type FROM information_schema.columns WHERE table_name = '" + table + "';")
+        return [x[0] for x in self.cursor.fetchall()]
 
     def join_outmost_tables(self):
         '''
@@ -510,6 +581,18 @@ class Fuse():
         :return:list of relational matrices.
         Only 1 matrix if binarization of attribute(column_id) is not required.
         '''
+
+        #TEST!!!!!!!!!!!!!!  quick-and-dirty fix?
+        if ' ' in column_id:
+            column_id=column_id[column_id.index(' '):]
+        column_id=column_id.strip()
+        '''table_column_names=self.list_table_columns(table)
+        if column_id not in table_column_names:
+            print("COLUMN ",column_id," NOT IN ",table_column_names)
+            if '_' in column_id:
+                column_id=column_id[column_id.index('_')+1:]'''
+
+
         table1=fk_link1[2]
         table2=fk_link2[2]
 
@@ -541,20 +624,43 @@ class Fuse():
             return []
         #CE JE MED DVEMA TABELAMA VEC FK POVEZAV KATERO IZBRATI ZA ZDRUZITEV TABEL?? --> TRETIRAJ LOCENO!! namesto po povezanih tabelah se sprehajaj po kombinacijah tujih kljucev
         #sql_query="SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk if x[0]==y]) for y in table_table1_fk_names])+" INNER JOIN "+table2+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk if x[0]==y]) for y in table_table2_fk_names])+';'
+        print("TAAABLEEE",table)
+        print("COLUMN ID",column_id)
         if self.presampling_mode:
             sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])
             sql_query+=' WHERE ( '
+
+
+            '''
             for y in self.sample[table1][1]:
-                print('yYYYYYY',y)
-                print('0000',self.sample[table1][0])
                 for x in range(len(self.sample[table1][0])):
-                    sql_query+="a."+self.sample[table1][0][x]+" = '"+y[x]+"' OR "
+                    sql_query+="a."+str(self.sample[table1][0][x])+" = '"+y[x]+"' OR "
             sql_query = sql_query[:-len(" OR ")]
             sql_query+=" ) AND ( "
             for y in self.sample[table2][1]:
                 for x in range(len(self.sample[table2][0])):
-                    sql_query += "b."+self.sample[table2][0][x] + " = '" + y[x] + "' OR "
+                    sql_query += "b."+str(self.sample[table2][0][x]) + " = '" + y[x] + "' OR "
             sql_query=sql_query[:-len(" OR ")]
+            sql_query+=');'
+            '''
+
+            for y in self.sample[table1][1]:
+                sql_query+=' ( '
+                for x in range(len(self.sample[table1][0])):
+                    sql_query += "a." + str(self.sample[table1][0][x]) + " = '" + str(y[x]) + "' AND "
+                sql_query = sql_query[:-len(" AND ")]
+                sql_query += ') '
+                sql_query+=' OR '
+            sql_query = sql_query[:-len(" OR ")]
+            sql_query+=" ) AND ( "
+            for y in self.sample[table2][1]:
+                sql_query+=' ( '
+                for x in range(len(self.sample[table2][0])):
+                    sql_query += "b." + str(self.sample[table2][0][x]) + " = '" + str(y[x]) + "' AND "
+                sql_query = sql_query[:-len(" AND ")]
+                sql_query += ') '
+                sql_query+=' OR '
+            sql_query = sql_query[:-len(" OR ")]
             sql_query+=');'
 
             #sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+' WHERE ('+'OR '.join([' OR '.join([self.sample[table1][0][x]+" = "+y[x] for x in range(len(self.sample[table1][0]))]) for y in self.sample[table1][1]])+") AND ("+'OR '.join([' OR '.join([self.sample[table2][0][x]+" = "+y[x] for x in range(len(self.sample[table2[0]]))]) for y in self.sample[table2][1]])
@@ -571,7 +677,7 @@ class Fuse():
         rows = np.array(rows)
 
         nr_columns=1
-        if self.column_data_type[table+' '+column_id][1]=="str" or self.column_data_type[table+' '+column_id][1]=="text":
+        if rows.shape[0]>0 and (self.column_data_type[table+' '+column_id][1]=="str" or self.column_data_type[table+' '+column_id][1]=="text"):
             if len(set(rows[:,-1]))>self.dummy_variable_treshold:
                 print("###Stolpec "+table+"."+column_id+" ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.")
                 return []
@@ -591,19 +697,58 @@ class Fuse():
             matrices.append(R)
         column_order_row_o1=[x[4].strip() for x in table_table1_fk]
         column_order_row_o2 = [x[4].strip() for x in table_table2_fk]
+        print("fkLINK 1",fk_link1)
+        objects_table1_data_type_postgres=[self.column_data_type[table1+' '+x][1] for x in objects_table1[0]]
+        objects_table1_data_type_python=[self.postgres_to_python_data_types[x.upper()] for x in objects_table1_data_type_postgres]
+        objects_table2_data_type_postgres = [self.column_data_type[table2 + ' ' + x][1] for x in objects_table2[0]]
+        objects_table2_data_type_python=[self.postgres_to_python_data_types[x.upper()] for x in objects_table2_data_type_postgres]
         for row in rows:
             c1=row[0:len(objects_table1[0])]
+            c1_tmp=[]
+            for x in range(len(c1)):
+                if objects_table1_data_type_python[x]=='integer':
+                    c1_tmp.append(int(c1[x]))
+                elif objects_table1_data_type_python[x]=='float':
+                    c1_tmp.append(float(c1[x]))
+                else:
+                    c1_tmp.append(str(c1[x]))
+            c1=c1_tmp
             #REMOVE .strip() quickfix
-            c1=tuple([c1[column_order_row_o1.index(x)].strip() for x in objects_table1[0]])
+            #c1=tuple([c1[column_order_row_o1.index(x)] for x in objects_table1[0]])
+            c1=[c1[column_order_row_o1.index(x)] for x in objects_table1[0]]
+            print("TYPE? ",str(type(c1[0]))=="<class \'numpy.str_\'>")
+            c1=[x.strip() if type(x)=='str' or str(type(x))=="<class \'numpy.str_\'>" else x for x in c1]
+
+            c1=tuple(c1)
             #c2=row[len(objects_table1[0]):-nr_columns]
             c2 = row[len(objects_table1[0]):-nr_columns]
-            c2 = tuple([c2[column_order_row_o2.index(x)].strip() for x in objects_table2[0]])
+            c2_tmp = []
+            for x in range(len(c2)):
+                if objects_table2_data_type_python[x] == 'integer':
+                    c2_tmp.append(int(c2[x]))
+                elif objects_table2_data_type_python[x] == 'float':
+                    c2_tmp.append(float(c2[x]))
+                else:
+                    c2_tmp.append(str(c2[x]))
+            c2 = c2_tmp
+            #c2 = tuple([c2[column_order_row_o2.index(x)].strip() for x in objects_table2[0]])
+            c2 = [c2[column_order_row_o2.index(x)] for x in objects_table2[0]]
+            print("TYPE? ", str(type(c2[0])) == "<class \'numpy.str_\'>")
+            c2=[x.strip() if type(x)=='str' or type(x)=="<class \'numpy.str_\'>" else x for x in c2]
+            c2=tuple(c2)
+
 
 
             v=row[-nr_columns:]
             for i in range(nr_columns):
-                print(objects_table1)
-                print(objects_table2)
+                print("OBJECTS 1",objects_table1)
+                #print("TYPE 1",self.column_data_type[table1])
+                print("OBJECTS 2",objects_table2)
+                #print("TYPE 2",self.column_data_type[table2])
+                print("C1",c1)
+                print("C2",c2)
+                print("C1 TYPES",str(type(c1[0])))
+                print("C2 TYPES",str(type(c2[0])))
                 matrices[i][list(objects_table1[1]).index(c1)][list(objects_table2[1]).index(c2)]=v[i]
         return matrices
 
@@ -613,7 +758,24 @@ class Fuse():
         Returns list with header(tuple of ordered column names) at index 0 and list of different value combinations (tuples) at index 1.
         '''
         pk_columns = [x[1] for x in self.primary_keys if x[0]==table]
-        self.cursor.execute("SELECT "+','.join(pk_columns)+" FROM "+table+";")
+        if self.presampling_mode:
+            sql_query="SELECT " + ','.join(pk_columns) + " FROM " + table
+            sql_query += ' WHERE '
+            """
+            KeyError: 'library_feature'
+            Je mozno da med samplingom izpade celotna tabela??
+            """
+            for y in self.sample[table][1]:
+                sql_query+=' ( '
+                for x in range(len(self.sample[table][0])):
+                    sql_query += table+"." + str(self.sample[table][0][x]) + " = '" + str(y[x]) + "' AND "
+                sql_query = sql_query[:-len(" AND ")]
+                sql_query += ') '
+                sql_query+=' OR '
+            sql_query = sql_query[:-len(" OR ")] +';'
+            self.cursor.execute(sql_query)
+        else:
+            self.cursor.execute("SELECT "+','.join(pk_columns)+" FROM "+table+";")
         #print("SELECT "+','.join(pk_columns)+" FROM "+table+";")
         rows=list(set(self.cursor.fetchall()))
         return [pk_columns,rows]
@@ -626,6 +788,7 @@ class Fuse():
         :param table2:
         :return:
         '''
+        print("TABELE, KI SO V VZORCU:",self.sample_tables)
         table2 = fk_link[2]
         objects_table1=self.get_object_ids(table1)
         objects_table2=self.get_object_ids(table2)
@@ -653,9 +816,11 @@ class Fuse():
         for line in lines:
             #print("LINE ",line)
             object1_id=tuple(line[0:len(objects_table1[0])])
-            #print("O1ID: ",object1_id)
+            print("O1ID: ",object1_id)
+            print("OBJECTS TABLE 1",objects_table1)
             object2_id=tuple(line[len(objects_table1[0]):])
-            #print("O2ID: ",object2_id)
+            print("O2ID: ",object2_id)
+            print("OBJECTS TABLE 2",objects_table2)
             if len(object1_id)==0 or len(object2_id)==0 or None in object1_id or None in object2_id:
                 continue
             object1_indx=objects_table1[1].index(object1_id)
@@ -706,6 +871,12 @@ class Fuse():
 
         tables=set([x for x,y in self.table_relations])
         for t in tables:
+            if self.presampling_mode:
+                if t not in self.sample_tables:
+                    print("###TABELE NI V VZORCU!!")
+                    print("T",t)
+                    print("SAMPLE",self.sample_tables)
+                    continue
             tables_linked_to_t=[y for x,y in self.table_relations if x==t]
             fk_names_linked_to_t=set([(y[0],y[1],y[3]) for y in self.foreign_keys if y[1]==t])
             print("TTTTTT:",t)
@@ -716,10 +887,14 @@ class Fuse():
                 #for t1,t2 in itertools.combinations(tables_linked_to_t,2):
                 for t1,t2 in itertools.combinations(fk_names_linked_to_t,2):
                     print("T1: ",t1,"T2: ",t2)
+                    if self.presampling_mode:
+                        if t1[2] not in self.sample_tables or t2[2] not in self.sample_tables:
+                            print("###TABELE NI V VZORCU!!")
+                            print("T1",t1[2])
+                            print("T2",t2[2])
+                            print("SAMPLE",self.sample_tables)
+                            continue
                     for c in [x for x in self.column_fusion if t+' ' in x]:
-                        # Kaj narediti v primeru, ko na neko tabelo kaze vec tujih kljucev??!! Vrstice so lahko medsebojno drugace povezane? Se ena gnezdena zanka?
-                        # Posebej problematicni primer: tabela1 referencira tabelo 2, ki ima primarni kljuc sestavljen iz vecih stolpcev preko vec kot enega samega sklopa stolpcev..
-                        # npr. orodje preko enega sklopa stolpcev referencira drzavo prodaje, preko drugega pa drzavo izdelave. Ce pa je PK tabele drzava sestavljen iz vec kot enega stolpca, kako lociti??
                         c=c[len(t+' '):]
                         matrices=self.gen_matrices_for_column(t1,t2,t,c)
                         if not t1[2]+' '+t2[2] in relation_matrices:
@@ -729,6 +904,12 @@ class Fuse():
                 #Zgradi relacijske matrike za vsako direktno povezavo obravnavane tabele.
                 #for t1 in tables_linked_to_t:
                 for t1 in fk_names_linked_to_t:
+                    if self.presampling_mode:
+                        if t1 not in self.sample_tables:
+                            print("###TABELE NI V VZORCU!!")
+                            print("T1", t1)
+                            print("SAMPLE", self.sample_tables)
+                            continue
                     matrices=self.gen_indicator_matrix_for_relation(t,t1)
                     if t==t1[2]:
                         if not t in constraint_matrices:
@@ -754,6 +935,7 @@ class Fuse():
                 for line in t:
                     self.checkpoint_file.write("\t".join([str(x) for x in line])+"\n")
                 self.checkpoint_file.write("!\n")
+            self.checkpoint_file.write('!!\n')
         self.checkpoint_file.write("\n")
 
         self.checkpoint_file.write("#CONSTRAINT MATRICES\n")
@@ -763,6 +945,7 @@ class Fuse():
                 for line in t:
                     self.checkpoint_file.write("\t".join([str(x) for x in line]) + "\n")
                 self.checkpoint_file.write("!\n")
+            self.checkpoint_file.write('!!\n')
         self.checkpoint_file.write("\n")
 
 
@@ -798,14 +981,23 @@ class Fuse():
         
         :return:
         '''
+        if not self.sample==None:
+            return
+
         print("***Vzorcenje relacij...")
         self.sample={}
+        self.sample_tables=set()
         for t in self.tables_gte2_fk:
             table_is_ot=True if t in self.object_types else False
             foreign_keys = [x for x in self.foreign_keys if x[1] == t] #tuji kljuci znotraj tabele
             foreign_keys_names=set([x[0] for x in foreign_keys])
             referenced_tables = [x[1] for x in self.table_relations if x[0] == t]
-            table_ids=self.get_object_ids(t)
+            if self.presampling_mode:
+                self.presampling_mode=False
+                table_ids=self.get_object_ids(t)
+                self.presampling_mode=True
+            else:
+                table_ids=self.get_object_ids(t)
             referenced_tables_ids={}
             reffering_columns=[]
             reffering_columns_ordered_list=[]
@@ -832,7 +1024,13 @@ class Fuse():
                     #self.sample[t] = list(set(self.sample[t]))
 
                 for referenced_table in referenced_tables:
-                    referenced_tables_ids[referenced_table] = self.get_object_ids(referenced_table)
+                    self.sample_tables.add(referenced_table)
+                    if self.presampling_mode:
+                        self.presampling_mode=False
+                        referenced_tables_ids[referenced_table] = self.get_object_ids(referenced_table)
+                        self.presampling_mode=True
+                    else:
+                        referenced_tables_ids[referenced_table] = self.get_object_ids(referenced_table)
                     if not referenced_table in self.sample:
                         self.sample[referenced_table] = [referenced_tables_ids[referenced_table][0],set()]
                     #id = [tuple([[relation_row[reffering_columns_ordered_list.index(z[2])] for z in fk_x if z[4] == y]]) for y in referenced_tables_ids[x][0]]
@@ -844,8 +1042,9 @@ class Fuse():
                             column=[z[2] for z in fk if z[4]==fk_column][0]
                             value=relation_row[reffering_columns_ordered_list.index(column)]
                             id.append(value)
-                        self.sample[referenced_table][1].add(tuple(id))
-                        #self.sample[referenced_table]=set(self.sample[referenced_table])
+                        if not None in id:
+                            self.sample[referenced_table][1].add(tuple(id))
+                            #self.sample[referenced_table]=set(self.sample[referenced_table])
 
                 #sum of selected rows for a pair of referenced tables with largest sample size
                 nr_rows_tables=[len(self.sample[x][1]) for x in referenced_tables]
@@ -853,6 +1052,16 @@ class Fuse():
                 nr_rows_tables.remove(number_selected_objects)
                 number_selected_objects+=max(nr_rows_tables)
         print("###SAMPLE:",self.sample)
+        #Save sample to disk
+        self.checkpoint_file.write("#SAMPLE\n")
+        for key in self.sample:
+            self.checkpoint_file.write(key + "\n")
+            self.checkpoint_file.write('\t'.join(self.sample[key][0])+'\n')
+            for t in self.sample[key][1]:
+                self.checkpoint_file.write("\t".join([str(x) for x in t]) + "\n")
+            self.checkpoint_file.write("!\n")
+        self.checkpoint_file.write("\n")
+
 
 
     def fuse_data(self):
@@ -863,6 +1072,7 @@ class Fuse():
         print("***Zlivanje podatkov..")
         object_types={}
         relational_matrices_keys=list(self.relation_matrices.keys())
+        print("RELATIONAL MATRICES KEYS",relational_matrices_keys)
         constraint_matrices_keys=list(self.constraint_matrices.keys())
 
         print('OBJEKTNI TIPI: ',self.object_types)
@@ -911,6 +1121,7 @@ class Fuse():
                 print(relational_matrix)
                 relational=relational[0]
                 related_objects=relational_matrices_keys[-i-1].split(' ')
+                print("RELATED OBJECTS",related_objects)
                 relations.append(fusion.Relation(relational_matrix,object_types[related_objects[0]],object_types[related_objects[1]]))
             print("\tCONSTRAINT MATRICES:")
             constraint = fusion_set[1]
@@ -936,6 +1147,8 @@ class Fuse():
             fuser = fusion.Dfmf()
             fuser.fuse(graph)
             self.latent_data_models.append(fuser)
+        print("***Konec!!")
+        print(self.latent_data_models)
 
     def display_database_erm(self,host,database,user,password):
         url='postgresql://'+user+':'+password+'@'+host+'/'+database
@@ -947,6 +1160,7 @@ class Fuse():
         plt.show()
 
     def __init__(self,host,database,user,password):
+            self.postgres_to_python_data_types={'CHAR':'str', 'VARCHAR':'str', 'TEXT':'str', 'SMALLINT':'integer', "INTEGER":'integer', 'INT':'integer', 'SERIAL':'integer', 'FLOAT':'float', 'real':'float', 'float8':'float', 'numeric':'float','DATE':'datetime'}
             print('***Initcializacija..')
             self.join_outmost_tables_mode = False #Ce True se pred zlivanjem stolpci obrobnih tabel (brez 'izhodnih' tujih kljucev) prepisejo v tabele, ki jih referencirajo
             self.dummy_variable_treshold=20 #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
@@ -960,9 +1174,12 @@ class Fuse():
             self.relation_matrices=None
             self.constraint_matrices=None
             self.object_types=None
+            self.sample=None
+            self.sample_tables=None
 
             #self.display_database_erm(host,database,user,password)
             self.connect_to_postgreSQL(host,database,user,password)
+            self.get_column_data_types()
             self.restore_from_checkpoint(host,database)
             #self.get_column_data_types() #hitreje: pridobi podatkovne tipe samo za stoplpce v vmesnih tabelah
             self.list_tables()
@@ -974,7 +1191,6 @@ class Fuse():
             if self.join_outmost_tables_mode:
                 self.join_outmost_tables()
             #self.get_column_data_types_tables_gte2_fk()
-            self.get_column_data_types()
             self.filter_columns_fusion()
             if self.presampling_mode:
                 self.presample()
