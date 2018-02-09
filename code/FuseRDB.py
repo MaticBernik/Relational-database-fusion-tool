@@ -248,7 +248,8 @@ class Fuse():
                 else:
                     data.append([float(x) for x in line.split("\t")])
             elif object_types_section:
-                self.object_types.append(line.split("\t"))
+                #self.object_types.append(line.split("\t"))
+                self.object_types.append(line)
             elif sample_section:
                 if line=='!':
                     key_next=True
@@ -838,6 +839,9 @@ class Fuse():
         As a result, method defines and initializes object variable object_types as a list of names
         for each table representing object type.
         '''
+        if not self.object_types==None:
+            return
+
         self.object_types=[]
         for table in self.tables:
             primary_key_columns=[x[1] for x in self.primary_keys if x[0]==table[1]]
@@ -916,11 +920,11 @@ class Fuse():
                             constraint_matrices[t] = []
                         constraint_matrices[t] += matrices
                     else:
-                        continue #Indikatorskih matrik za direktno povezane pare tabel ne gradimo, saj ne predstavljajo relacij med objekti, temvec zgolj razsiritev atributov
-                        if not t + ' ' + t1 in relation_matrices:
-                            relation_matrices[t + ' ' + t1] = []
+                        #Indikatorske matrike tudi gradimo, da lahko zagotovimo povezanost grafa, ki ga podamo fusion algoritmu
+                        if not t + ' ' + t1[2] in relation_matrices:
+                            relation_matrices[t + ' ' + t1[2]] = []
                         #Lahko zgradimo po eno za vsak stolpec (katere koli od) povezanih tabel
-                        relation_matrices[t + ' ' + t1] += matrices
+                        relation_matrices[t + ' ' + t1[2]] += matrices
 
         self.relation_matrices=relation_matrices
         self.constraint_matrices=constraint_matrices
@@ -1105,6 +1109,7 @@ class Fuse():
         else:
             self.fusion_sets=[(x,()) for x in matrices_of_relational_matrices]
 
+        self.object_types_in_fusion_scheme=set()
         self.fusion_graphs=[]
         for fusion_set in self.fusion_sets:
             relations = []
@@ -1122,6 +1127,8 @@ class Fuse():
                 relational=relational[0]
                 related_objects=relational_matrices_keys[-i-1].split(' ')
                 print("RELATED OBJECTS",related_objects)
+                self.object_types_in_fusion_scheme.add(related_objects[0])
+                self.object_types_in_fusion_scheme.add(related_objects[1])
                 relations.append(fusion.Relation(relational_matrix,object_types[related_objects[0]],object_types[related_objects[1]]))
             print("\tCONSTRAINT MATRICES:")
             constraint = fusion_set[1]
@@ -1135,6 +1142,7 @@ class Fuse():
                 print(constraint_matrix)
                 constraint = constraint[0]
                 related_objects = constraint_matrices_keys[-i - 1]
+                self.object_types_in_fusion_scheme.add(related_objects)
                 relations.append(fusion.Relation(constraint_matrix, object_types[related_objects], object_types[related_objects]))
             #Build new fusion graph
             fusion_graph = fusion.FusionGraph()
@@ -1147,8 +1155,42 @@ class Fuse():
             fuser = fusion.Dfmf()
             fuser.fuse(graph)
             self.latent_data_models.append(fuser)
-        print("***Konec!!")
+        print("***Konec zlivanja!!")
+
         print(self.latent_data_models)
+        print("TABELE V VZORCU:",self.sample_tables)
+        for x in range(len(self.latent_data_models)):
+            print("MODEL #"+str(x))
+            for object_type in self.object_types_in_fusion_scheme:
+                print('\t\t'+object_type+' shape:  ',self.latent_data_models[x].factor(object_types[object_type]).shape)
+            print("\t\tOBJEKTNI TIPI", graph.object_types)
+            print("\t\tRELACIJE", graph.relations)
+
+    def select_denser_matrices(self,matrices_list):
+        '''
+        Returns sublist of given matrices_list, of length equal to user-set parameter self.max_number_of_alternative_relation_matrices_to_use.
+        Prefers matrices with higher percentage of non-zero elements.
+        :param matrices_list:
+        :return:
+        '''
+        scores=[]
+        for matrix in matrices_list:
+            matrix=np.array(matrix)
+            scores.append(np.count_nonzero(matrix)/(matrix.shape[0]*matrix.shape[1]))
+        chosen_matrices_indices=np.argsort(scores)[::-1][:self.max_number_of_alternative_relation_matrices_to_use]
+        return [matrices_list[i] for i in chosen_matrices_indices]
+
+    def limit_relation_matrices_number(self):
+        '''
+        Check if number of relation matrices describing any relation between pairs of object types exceeds the limit set by user.
+        If the limit is not respected, select subset of matrices using different heuristics (size, density..)
+        '''
+        for relation in self.relation_matrices:
+            if len(self.relation_matrices[relation])>self.max_number_of_alternative_relation_matrices_to_use:
+                print("###Relacija "+str(relation)+" ima "+str(len(self.relation_matrices[relation]))+" kar je vec kot omejitev "+str(self.max_number_of_alternative_relation_matrices_to_use)+" alternativnih relacijskih matrik!")
+                self.relation_matrices[relation]=self.select_denser_matrices(self.relation_matrices[relation])
+                #self.relation_matrices[relation] = self.select_larger_matrices(self.relation_matrices[relation])
+
 
     def display_database_erm(self,host,database,user,password):
         url='postgresql://'+user+':'+password+'@'+host+'/'+database
@@ -1160,11 +1202,12 @@ class Fuse():
         plt.show()
 
     def __init__(self,host,database,user,password):
-            self.postgres_to_python_data_types={'CHAR':'str', 'VARCHAR':'str', 'TEXT':'str', 'SMALLINT':'integer', "INTEGER":'integer', 'INT':'integer', 'SERIAL':'integer', 'FLOAT':'float', 'real':'float', 'float8':'float', 'numeric':'float','DATE':'datetime'}
+            self.postgres_to_python_data_types={'CHARACTER':'str', 'CHAR':'str', 'VARCHAR':'str', 'TEXT':'str', 'SMALLINT':'integer', "INTEGER":'integer', 'INT':'integer', 'SERIAL':'integer', 'FLOAT':'float', 'real':'float', 'float8':'float', 'numeric':'float','DATE':'datetime'}
             print('***Initcializacija..')
             self.join_outmost_tables_mode = False #Ce True se pred zlivanjem stolpci obrobnih tabel (brez 'izhodnih' tujih kljucev) prepisejo v tabele, ki jih referencirajo
-            self.dummy_variable_treshold=20 #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
+            self.dummy_variable_treshold=0 #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
             self.max_number_of_objects=self.estimate_relation_matrix_dimension_constraint()
+            self.max_number_of_alternative_relation_matrices_to_use=10 #Omeji stevilo alternativnih relacijskih matrik, ki naj se upostevajo za relacijo med katerima koli objektnima tipoma (ce se preseze se matrike izbere z razlicnimi hevristikami)
 
             self.foreign_keys=None
             self.primary_keys=None
@@ -1183,7 +1226,7 @@ class Fuse():
             self.restore_from_checkpoint(host,database)
             #self.get_column_data_types() #hitreje: pridobi podatkovne tipe samo za stoplpce v vmesnih tabelah
             self.list_tables()
-            self.presampling_mode=True if self.estimate_complexity()>=1 else False
+            self.presampling_mode=True if self.estimate_complexity()>=3 else False
             self.list_key_constraints()
             self.list_object_types()
             self.list_connected_tables()
@@ -1198,6 +1241,7 @@ class Fuse():
             #print("vrste stolpcev v tabelah gte2 fk: ",self.column_data_type)
             #print("columns fusion: ",self.column_fusion)
             self.build_relation_matricies()
+            self.limit_relation_matrices_number()
             self.fuse_data()
             self.checkpoint_file.close()
 
