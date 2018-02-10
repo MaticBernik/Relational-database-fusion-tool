@@ -18,6 +18,7 @@ import psutil
 from eralchemy import render_er #https://github.com/Alexis-benoist/eralchemy
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from scipy.spatial import distance as distance_library
 
 
 
@@ -1105,14 +1106,16 @@ class Fuse():
 
         #ustvarimo po eno zlivanje oz. latentni podatkovni model za vsako od kombinacij relacijskih in omejitvenih matrik
         if len(matrices_of_constraint_matrices)>0:
-            self.fusion_sets=list(itertools.product(matrices_of_relational_matrices,matrices_of_constraint_matrices))
+            fusion_sets=list(itertools.product(matrices_of_relational_matrices,matrices_of_constraint_matrices))
         else:
-            self.fusion_sets=[(x,()) for x in matrices_of_relational_matrices]
+            fusion_sets=[(x,()) for x in matrices_of_relational_matrices]
 
         self.object_types_in_fusion_scheme=set()
+        self.fusion_sets=[]
         self.fusion_graphs=[]
-        for fusion_set in self.fusion_sets:
+        for fusion_set in fusion_sets:
             relations = []
+            fusion_set_tmp={}
             print("FUSION SET: ")
             print("\tRELATIONAL MATRICES:")
             relational=fusion_set[0]
@@ -1129,6 +1132,7 @@ class Fuse():
                 print("RELATED OBJECTS",related_objects)
                 self.object_types_in_fusion_scheme.add(related_objects[0])
                 self.object_types_in_fusion_scheme.add(related_objects[1])
+                fusion_set_tmp[related_objects[0]+' '+related_objects[1]]=(relational_matrix,object_types[related_objects[0]],object_types[related_objects[1]])
                 relations.append(fusion.Relation(relational_matrix,object_types[related_objects[0]],object_types[related_objects[1]]))
             print("\tCONSTRAINT MATRICES:")
             constraint = fusion_set[1]
@@ -1143,7 +1147,9 @@ class Fuse():
                 constraint = constraint[0]
                 related_objects = constraint_matrices_keys[-i - 1]
                 self.object_types_in_fusion_scheme.add(related_objects)
+                fusion_set_tmp[related_objects + ' ' + related_objects] = (constraint_matrix, object_types[related_objects], object_types[related_objects])
                 relations.append(fusion.Relation(constraint_matrix, object_types[related_objects], object_types[related_objects]))
+            self.fusion_sets.append(fusion_set_tmp)
             #Build new fusion graph
             fusion_graph = fusion.FusionGraph()
             fusion_graph.add_relations_from(relations)
@@ -1165,6 +1171,66 @@ class Fuse():
                 print('\t\t'+object_type+' shape:  ',self.latent_data_models[x].factor(object_types[object_type]).shape)
             print("\t\tOBJEKTNI TIPI", graph.object_types)
             print("\t\tRELACIJE", graph.relations)
+
+    def score_relation(self,relation):
+        '''
+            :param relation: name of a relation
+            :return: score for a given relation name, that is calculated as a mean of relation matrix reconstruction accuracy
+            across all models.
+        '''
+        distance_avg=0
+        nr_models_used=0
+        for x in range(len(self.fusion_sets)):
+            fusion_set=self.fusion_sets[x]
+            object_types_relation=fusion_set[relation]
+            object_type1=object_types_relation[1]
+            object_type2=object_types_relation[2]
+            original_matrix=np.array(object_types_relation[0])
+
+            model=self.latent_data_models[x]
+            object_type1_latent_matrix=model.factor(object_type1)
+            object_type2_latent_matrix=model.factor(object_type2)
+            latent_space_matrix=object_type1_latent_matrix.dot(object_type2_latent_matrix.T)
+
+            if np.isnan(latent_space_matrix).any():
+                #Failsafe - Zakaj so vcasih vrednosti nan?
+                continue
+
+            original_matrix_vector=original_matrix.reshape(1,original_matrix.shape[0]*original_matrix.shape[1])
+            latent_space_matrix_vector=latent_space_matrix.reshape(1,latent_space_matrix.shape[0]*latent_space_matrix.shape[1])
+            #distance_avg+=distance_library.seuclidean(original_matrix_vector,latent_space_matrix_vector)
+            print("RELATION",relation)
+            print("ORIG",original_matrix_vector)
+            print("LATENT",latent_space_matrix_vector)
+            print("LATENT1",object_type1_latent_matrix)
+            print("LATENT2",object_type2_latent_matrix)
+            distance_avg+=distance_library.euclidean(original_matrix_vector,latent_space_matrix_vector)
+            nr_models_used+=1
+        if nr_models_used>0:
+            distance_avg=distance_avg/nr_models_used
+        else:
+            #tehrnicno se razdalje v tem primeru ne da izracunati in bi moral vrniti None
+            distance_avg=9999999999
+        return distance_avg
+
+    def rank_object_type_relations(self):
+        '''
+        Ranks relations between object types based on accuracy of relation matrix reconstruction from
+        product of matrices in latent space.
+        :return: ordered list of tuples each representing one relation between object types and its negative score(distance).
+        Tuple form:  ( relation_name, reconstruction_distance )
+        '''
+        object_type_relations=list(self.relation_matrices.keys())
+        scores=[]
+        for relation in object_type_relations:
+            object_types_in_relation=relation.split(' ')
+            if object_types_in_relation[0]==object_types_in_relation[1]:
+                #povezave med dvema istima objektnima tipoma niso zanimive?
+                continue
+            scores.append(self.score_relation(relation))
+        ranked_list_indices = np.argsort(scores)
+        return [(object_type_relations[x],scores[x]) for x in ranked_list_indices]
+
 
     def select_denser_matrices(self,matrices_list):
         '''
@@ -1244,6 +1310,13 @@ class Fuse():
             self.limit_relation_matrices_number()
             self.fuse_data()
             self.checkpoint_file.close()
+            ranked_relation_list=self.rank_object_type_relations()
+
+            print("\n\n\nRANGIRAN SEZNAM RELACIJ:")
+            i=1
+            for relation,score in ranked_relation_list:
+                print("%5d. %s\t(%d)\n" % (i,relation,score))
+                i+=1
 
 
 if __name__ == "__main__":
