@@ -106,6 +106,7 @@ class Fuse():
         :param database:
         :return:
         '''
+        print("***Nalagam shranjene podatke iz datoteke...")
         checkpoint_file_path=".checkpoint_"+host+"_"+database+".txt"
         self.checkpoint_file=open(checkpoint_file_path,'a+')
         self.checkpoint_file.seek(0,0)
@@ -230,7 +231,7 @@ class Fuse():
                     data=[]
                     key_next=False
                 else:
-                    data.append([float(x) for x in line.split("\t")])
+                    data.append([np.nan if x=='nan' else float(x) for x in line.split("\t")])
             elif constraint_matrices_section:
                 if line=='!!':
                     key_next=True
@@ -249,7 +250,7 @@ class Fuse():
                     data=[]
                     key_next=False
                 else:
-                    data.append([float(x) for x in line.split("\t")])
+                    data.append([np.nan if x=='nan' else float(x) for x in line.split("\t")])
             elif object_types_section:
                 #self.object_types.append(line.split("\t"))
                 self.object_types.append(line)
@@ -301,6 +302,38 @@ class Fuse():
         print("TABLES: ",self.tables)
         print("RELATION MATRICES: ",self.relation_matrices)
         print("CONSTRAINT MATRICES: ",self.constraint_matrices)'''
+
+
+    def select_denser_matrices(self,matrices_list):
+        '''
+        Returns sublist of given matrices_list, of length equal to user-set parameter self.max_number_of_alternative_relation_matrices_to_use.
+        Prefers matrices with higher percentage of non-zero elements.
+        :param matrices_list:
+        :return:
+        '''
+        scores=[]
+        for matrix in matrices_list:
+            matrix=np.array(matrix)
+            scores.append(np.count_nonzero(matrix)/(matrix.shape[0]*matrix.shape[1])) #Nonzero ni korektno - 0 je tudi lahko vrednost
+        chosen_matrices_indices=np.argsort(scores)[::-1][:self.max_number_of_alternative_relation_matrices_to_use]
+        return [matrices_list[i] for i in chosen_matrices_indices]
+
+    def limit_relation_matrices_number(self,relation_matrices=None):
+        '''
+        Check if number of relation matrices describing any relation between pairs of object types exceeds the limit set by user.
+        If the limit is not respected, select subset of matrices using different heuristics (size, density..)
+        '''
+        if relation_matrices is None:
+            relation_matrices=self.relation_matrices
+        print("***Preverjam stevilo alternativnih relacijskih matrik za relacije..")
+        for relation in relation_matrices:
+            if len(relation_matrices[relation])>self.max_number_of_alternative_relation_matrices_to_use:
+                print("\tRelacija "+str(relation)+" ima "+str(len(relation_matrices[relation]))+" kar je vec kot omejitev "+str(self.max_number_of_alternative_relation_matrices_to_use)+" alternativnih relacijskih matrik!")
+                print("\t\t\tIzbiram "+str(self.max_number_of_alternative_relation_matrices_to_use)+" najgostejsih matrik")
+                relation_matrices[relation]=self.select_denser_matrices(relation_matrices[relation])
+                #self.relation_matrices[relation] = self.select_larger_matrices(self.relation_matrices[relation])
+
+
 
     def list_tables(self):
         '''
@@ -407,13 +440,19 @@ class Fuse():
         self.tables_nr_fk=Counter([x[0] for x in self.table_relations]) #stevilo povezav na ostale tabele
         self.tables_gte2_fk=[x for x in self.tables_nr_fk if self.tables_nr_fk[x]>=2]'''
 
-    def count_fk(self,table):
+    def table_count_fk(self,table):
         '''
         :param table: table name
         :return: number of foreign keys in a given table
         '''
-        fk_nr=Counter([x[1] for x in set([(x[0],x[1]) for x in self.foreign_keys])]) #stevilo tujih kljucev znotraj tabele
+        fk_nr=Counter(set([([(x[0],x[1]) for x in self.foreign_keys])])) #stevilo tujih kljucev znotraj tabele
         return len([x[0] for x in self.foreign_keys if x[1]==table])
+
+    def count_fk(self):
+        '''
+        :return: returns dictionary which stores number of foreign keys for each table
+        '''
+        return Counter([y[1] for y in set([(x[0], x[1]) for x in self.foreign_keys])])
 
 
     def list_tables_gte2_fk(self):
@@ -471,68 +510,49 @@ class Fuse():
             return
 
 
-        self.excluded_tables=[]
+        self.excluded_tables=set()
         self.modified_tables={}
-        tables_to_modify=[]
+        tables_to_modify=set()
 
+        tables_nr_fk=self.count_fk()
         #find tables with no foreign keys
-        for t in self.tables:
-            table_name = t[1]
-            if not table_name in [x[1] for x in self.foreign_keys]:
-                for x in self.foreign_keys:
-                    if x[3]==table_name:
-                        #find all foreign key constraints that connect another table to this table
-                        #print("foreign key: ",x)
-                        #print("list(fk): ",[x])
-                        tables_to_modify.append([x])
-                self.excluded_tables.append(table_name)
+        '''tables_with_fk=set([x[1] for x in self.foreign_keys])
+        tables_without_fk=set([x for x in self.tables if x not in tables_with_fk])'''
+        tables_without_fk=set([x[1] for x in self.tables if x[1] not in tables_nr_fk])
+        tables_without_fk_having_connected_tables = set([x[3] for x in self.foreign_keys if x[3] in tables_without_fk])
+        tables_without_fk_having_connected_tables_with_one_fk=set([x for x in tables_without_fk_having_connected_tables if tables_nr_fk[x]==1])
+        tables_connected_to_tables_without_fk=set([x[1] for x in self.foreign_keys if x[3] in tables_without_fk])
+        tables_with_one_fk_connected_to_tables_without_fk=set([x for x in tables_connected_to_tables_without_fk if tables_nr_fk[x]==1])
+        tables_to_modify=tables_with_one_fk_connected_to_tables_without_fk
+        self.excluded_tables = tables_without_fk_having_connected_tables_with_one_fk
 
-        tables_to_join_exist=True
-        while tables_to_join_exist:
-            tables_to_modify_tmp=[]
-            for t in tables_to_modify:
-                #iterate trough all 'chains' of FK constraint connecting any table to outmost table (without FK constraints)
-                last_link=t[len(t)-1]
-                last_table=last_link[1]
-                last_table_nr_connected_tables=len(set([x for x in self.foreign_keys if x[1] == last_table]))
-                #check how many tables there are that are connected to any 'chain' via FK constraint
-                if last_table_nr_connected_tables > 1:
-                    #tables referencing other tables can not be joined
-                    tables_to_join_exist = False
-                    tables_to_modify_tmp.append(t)
-                    continue
-                table_connections = [x for x in self.foreign_keys if x[3] == last_table]
-                ##find all foreign key constraints that connect another table to this 'chain'
-                if len(table_connections)==0:
-                    tables_to_join_exist=False
-                    tables_to_modify_tmp.append(t)
-                else:
-                    for c in table_connections:
-                        #create new chain for every possible new link at the end of current chain
-                        t_tmp=[x for x in t]
-                        tables_to_modify_tmp.append(t_tmp.append(c))
-                    self.excluded_tables.append(last_table)
-            tables_to_modify=tables_to_modify_tmp
+        len_tables_to_modify_tmp=-1
+        while len(tables_to_modify)!=len_tables_to_modify_tmp:
+            len_tables_to_modify_tmp=len(tables_to_modify)
+            tables_without_fk = tables_to_modify
+            tables_without_fk_having_connected_tables = set([x[3] for x in self.foreign_keys if x[3] in tables_without_fk])
+            tables_without_fk_having_connected_tables_with_one_fk = set([x for x in tables_without_fk_having_connected_tables if tables_nr_fk[x] == 1])
+            tables_connected_to_tables_without_fk = set([x[1] for x in self.foreign_keys if x[3] in tables_without_fk])
+            tables_with_one_fk_connected_to_tables_without_fk = set([x for x in tables_connected_to_tables_without_fk if tables_nr_fk[x] == 1])
+            tables_to_modify_having_connected_tables_with_one_fk=set([x[3] for x in self.foreign_keys if x[3] in tables_to_modify and tables_nr_fk[x[1]]==1])
+            tables_to_modify = (tables_to_modify - tables_to_modify_having_connected_tables_with_one_fk) | tables_with_one_fk_connected_to_tables_without_fk
+            self.excluded_tables |= tables_without_fk_having_connected_tables_with_one_fk
+
+        print("###EXCLUDED TABLES:",self.excluded_tables)
 
         for t in tables_to_modify:
-            "POPRAVI SQL QUERY ZA SESTAVLJENE TUJE KLJUCE IN VECKRATNE REFERENCE"
-            #print(t)
-            sql_query="SELECT * FROM"
-            last_link=t[len(t)-1]
-            key=last_link[1]
-            first=True
-            for c in t:
-                #print("C: ",c)
-                if first:
-                    sql_query+=" "+c[1]+" INNER JOIN "+c[3]+" ON "+c[1]+"."+c[2]+" = "+c[3]+"."+c[4]
-                    first=False
-                    continue
-                sql_query+=" INNER JOIN "+c[1]+" ON "+c[1]+"."+c[2]+" = "+c[3]+"."+c[4]
+            sql_query = "SELECT * FROM "+t+' '
+            table=t
+            while True:
+                table_connected_to_table=set([x[3] for x in self.foreign_keys if x[1]==t])
+                if len(table_connected_to_table)==0:
+                    break
+                else:
+                    table_connected_to_table=table_connected_to_table[0]
+                    sql_query+=" INNER JOIN "+table_connected_to_table+" ON "
+                    sql_query+=' AND '.join(x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4]+' ' for x in self.foreign_keys if x[1]==table and x[3]==table_connected_to_table)
             sql_query+=';'
-            self.cursor.execute(sql_query)
-            joined_table=self.cursor.fetchall()
-            # REMOVE COLUMNS THAT ARE NOT SUITABLE FOR FUSION
-            self.modified_tables[key]=joined_table
+            self.modified_tables[t]=sql_query
 
             #write to checkpoint file
             self.checkpoint_file.write("#EXCLUDED TABLES LIST\n")
@@ -699,7 +719,7 @@ class Fuse():
         nr_columns=1
         if rows.shape[0]>0 and (self.column_data_type[table+' '+column_id][1]=="str" or self.column_data_type[table+' '+column_id][1]=="text"):
             if len(set(rows[:,-1]))>self.dummy_variable_treshold:
-                print("\t\t\t\tStolpec "+table+"."+column_id+" ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.")
+                print("\t\t\t\t\t\t\tStolpec "+table+"."+column_id+" ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.")
                 return []
             labelencoder=LabelEncoder()
             rows[:,-1]=labelencoder.fit_transform(rows[:,-1])
@@ -713,7 +733,9 @@ class Fuse():
 
 
         for i in range(nr_columns):
-            R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
+            #R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
+            R = np.empty((len(objects_table1[1]), len(objects_table2[1])))
+            R.fill(np.nan)
             matrices.append(R)
         column_order_row_o1=[x[4].strip() for x in table_table1_fk]
         column_order_row_o2 = [x[4].strip() for x in table_table2_fk]
@@ -781,10 +803,6 @@ class Fuse():
         if self.presampling_mode:
             sql_query="SELECT " + ','.join(pk_columns) + " FROM " + table
             sql_query += ' WHERE '
-            """
-            KeyError: 'library_feature'
-            Je mozno da med samplingom izpade celotna tabela??
-            """
             for y in self.sample[table][1]:
                 sql_query+=' ( '
                 for x in range(len(self.sample[table][0])):
@@ -818,7 +836,9 @@ class Fuse():
 
         if len(objects_table1[1]) == 0 or len(objects_table2[1]) == 0:
             return []
-        R = np.zeros((len(objects_table1[1]), len(objects_table2[1])))
+        #R = np.zeros((len(objects_table1[1]), len(objects_table2[1])))
+        R = np.empty((len(objects_table1[1]), len(objects_table2[1])))
+        R.fill(np.nan)
         #fill in 1s
         header_fk_tmp=[]
         for x in objects_table2[0]:
@@ -899,7 +919,7 @@ class Fuse():
             print("\t ( "+str(table_count)+' / '+str(len(tables))+" )\tGradim relacijske matrike za tabelo: ",t)
             if self.presampling_mode:
                 if t not in self.sample_tables:
-                    print("\tTABELE NI V VZORCU!!")
+                    print("\t\t\tTABELE NI V VZORCU!!")
                     '''print("T",t)
                     print("SAMPLE",self.sample_tables)'''
                     continue
@@ -941,7 +961,7 @@ class Fuse():
                 table_combo_count=0
                 for t1 in fk_names_linked_to_t:
                     table_combo_count+=1
-                    print("\t\t\t( "+str(table_combo_count)+' / '+str(len(fk_names_linked_to_t))+" )\tGradim relacijske matrike za povezavo s:",t1)
+                    print("\t\t\t( "+str(table_combo_count)+' / '+str(len(fk_names_linked_to_t))+" )\tGradim omejitvene oz. indikatorske matrike za povezavo s:",t1)
                     if self.presampling_mode:
                         if t1 not in self.sample_tables:
                             '''print("\tTABELE NI V VZORCU!!")
@@ -959,7 +979,7 @@ class Fuse():
                             relation_matrices[t + ' ' + t1[2]] = []
                         #Lahko zgradimo po eno za vsak stolpec (katere koli od) povezanih tabel
                         relation_matrices[t + ' ' + t1[2]] += matrices
-
+            self.limit_relation_matrices_number(relation_matrices) #Zaradi porabe pomnilnika ze spotoma filtriraj seznam alternativnih matrik
         self.relation_matrices=relation_matrices
         self.constraint_matrices=constraint_matrices
         #print("RELATION MATRICES: ",relation_matrices)
@@ -1103,32 +1123,27 @@ class Fuse():
             self.checkpoint_file.write("!\n")
         self.checkpoint_file.write("\n")
 
+    def generate_fusion_graphs(self):
+        print("***Generiram graf za zlivanje..")
+        self.object_types_fusion = {}
+        relational_matrices_keys = list(self.relation_matrices.keys())
+        # print("RELATIONAL MATRICES KEYS",relational_matrices_keys)
+        constraint_matrices_keys = list(self.constraint_matrices.keys())
 
-
-    def fuse_data(self):
-        '''
-        https://github.com/marinkaz/scikit-fusion
-        :return:
-        '''
-        print("***Zlivanje podatkov..")
-        self.object_types_fusion={}
-        relational_matrices_keys=list(self.relation_matrices.keys())
-        #print("RELATIONAL MATRICES KEYS",relational_matrices_keys)
-        constraint_matrices_keys=list(self.constraint_matrices.keys())
-
-        #print('OBJEKTNI TIPI: ',self.object_types)
+        # print('OBJEKTNI TIPI: ',self.object_types)
         for type_name in self.object_types:
-            self.object_types_fusion[type_name]=fusion.ObjectType(type_name)
+            self.object_types_fusion[type_name] = fusion.ObjectType(type_name)
 
-        matrices_of_relational_matrices=[] #seznam hrani vse mozne nabore matrik relacijskih matrik
-        first=True
+        matrices_of_relational_matrices = []  # seznam hrani vse mozne nabore matrik relacijskih matrik
+        first = True
         for relation_key in relational_matrices_keys:
             if first:
-                matrices_of_relational_matrices+=self.relation_matrices[relation_key]
-                first=False
+                matrices_of_relational_matrices += self.relation_matrices[relation_key]
+                first = False
                 continue
-            matrices_of_relational_matrices = list(itertools.product(matrices_of_relational_matrices, self.relation_matrices[relation_key]))
-        #print("MATRICES OF RELATIONAL MATRICES: ",matrices_of_relational_matrices)
+            matrices_of_relational_matrices = list(
+                itertools.product(matrices_of_relational_matrices, self.relation_matrices[relation_key]))
+        # print("MATRICES OF RELATIONAL MATRICES: ",matrices_of_relational_matrices)
 
         matrices_of_constraint_matrices = []  # seznam hrani vse mozne nabore matrik omejitvenih matrik
         first = True
@@ -1137,78 +1152,72 @@ class Fuse():
                 matrices_of_constraint_matrices += self.constraint_matrices[relation_key]
                 first = False
                 continue
-            matrices_of_constraint_matrices = list(itertools.product(matrices_of_constraint_matrices, self.constraint_matrices.values[relation_key]))
-        #print("MATRICES OF CONSTRAINT MATRICES: ", matrices_of_constraint_matrices)
+            matrices_of_constraint_matrices = list(
+                itertools.product(matrices_of_constraint_matrices, self.constraint_matrices.values[relation_key]))
+        # print("MATRICES OF CONSTRAINT MATRICES: ", matrices_of_constraint_matrices)
 
-        #ustvarimo po eno zlivanje oz. latentni podatkovni model za vsako od kombinacij relacijskih in omejitvenih matrik
-        if len(matrices_of_constraint_matrices)>0:
-            fusion_sets=list(itertools.product(matrices_of_relational_matrices,matrices_of_constraint_matrices))
+        # ustvarimo po eno zlivanje oz. latentni podatkovni model za vsako od kombinacij relacijskih in omejitvenih matrik
+        if len(matrices_of_constraint_matrices) > 0:
+            fusion_sets = list(itertools.product(matrices_of_relational_matrices, matrices_of_constraint_matrices))
         else:
-            fusion_sets=[(x,()) for x in matrices_of_relational_matrices]
+            fusion_sets = [(x, ()) for x in matrices_of_relational_matrices]
 
-        self.object_types_in_fusion_scheme=set()
-        self.fusion_sets=[]
-        self.fusion_graphs=[]
-        fusion_set_counter=0
+        self.object_types_in_fusion_scheme = set()
+        self.fusion_sets = []
+        #self.fusion_graphs = []
+        fusion_set_counter = 0
         print("\t#Pripravljam grafe za zlivanje..")
         for fusion_set in fusion_sets:
-            fusion_set_counter+=1
-            print("\t\t\t ( "+str(fusion_set_counter)+' / '+str(len(fusion_sets))+" )")
+            fusion_set_counter += 1
+            print("\t\t\t ( " + str(fusion_set_counter) + ' / ' + str(len(fusion_sets)) + " ) Pripravljam graf..")
 
             relations = []
-            fusion_set_tmp={}
-            #print("FUSION SET: ")
-            #print("\tRELATIONAL MATRICES:")
-            relational=fusion_set[0]
+            fusion_set_tmp = {}
+            # print("FUSION SET: ")
+            # print("\tRELATIONAL MATRICES:")
+            relational = fusion_set[0]
             for i in range(len(self.relation_matrices)):
-                #print("\t\t"+relational_matrices_keys[-i-1])
-                if i==len(self.relation_matrices)-1:
-                    relational_matrix=np.array(relational)
+                # print("\t\t"+relational_matrices_keys[-i-1])
+                if i == len(self.relation_matrices) - 1:
+                    relational_matrix = np.array(relational)
                 else:
-                    relational_matrix=np.array(relational[-1])
-                #print("\t\t",relational_matrix.shape)
-                #print(relational_matrix)
-                relational=relational[0]
-                related_objects=relational_matrices_keys[-i-1].split(' ')
-                #print("RELATED OBJECTS",related_objects)
+                    relational_matrix = np.array(relational[-1])
+                # print("\t\t",relational_matrix.shape)
+                # print(relational_matrix)
+                relational = relational[0]
+                related_objects = relational_matrices_keys[-i - 1].split(' ')
+                # print("RELATED OBJECTS",related_objects)
                 self.object_types_in_fusion_scheme.add(related_objects[0])
                 self.object_types_in_fusion_scheme.add(related_objects[1])
-                fusion_set_tmp[related_objects[0]+' '+related_objects[1]]=(relational_matrix,self.object_types_fusion[related_objects[0]],self.object_types_fusion[related_objects[1]])
-                relations.append(fusion.Relation(relational_matrix,self.object_types_fusion[related_objects[0]],self.object_types_fusion[related_objects[1]]))
-            #print("\tCONSTRAINT MATRICES:")
+                fusion_set_tmp[related_objects[0] + ' ' + related_objects[1]] = (
+                relational_matrix, self.object_types_fusion[related_objects[0]],
+                self.object_types_fusion[related_objects[1]])
+                relations.append(fusion.Relation(relational_matrix, self.object_types_fusion[related_objects[0]],
+                                                 self.object_types_fusion[related_objects[1]]))
+            # print("\tCONSTRAINT MATRICES:")
             constraint = fusion_set[1]
             for i in range(len(self.constraint_matrices)):
-                #print("\t\t" + constraint_matrices_keys[-i-1])
-                if i==len(self.constraint_matrices)-1:
-                    constraint_matrix=np.array(constraint)
+                # print("\t\t" + constraint_matrices_keys[-i-1])
+                if i == len(self.constraint_matrices) - 1:
+                    constraint_matrix = np.array(constraint)
                 else:
-                    constraint_matrix=np.array(constraint[-1])
-                #print("\t\t",constraint_matrix.shape)
-                #print(constraint_matrix)
+                    constraint_matrix = np.array(constraint[-1])
+                # print("\t\t",constraint_matrix.shape)
+                # print(constraint_matrix)
                 constraint = constraint[0]
                 related_objects = constraint_matrices_keys[-i - 1]
                 self.object_types_in_fusion_scheme.add(related_objects)
-                fusion_set_tmp[related_objects + ' ' + related_objects] = (constraint_matrix, self.object_types_fusion[related_objects], self.object_types_fusion[related_objects])
-                relations.append(fusion.Relation(constraint_matrix, self.object_types_fusion[related_objects], self.object_types_fusion[related_objects]))
+                fusion_set_tmp[related_objects + ' ' + related_objects] = (
+                constraint_matrix, self.object_types_fusion[related_objects], self.object_types_fusion[related_objects])
+                relations.append(fusion.Relation(constraint_matrix, self.object_types_fusion[related_objects],
+                                                 self.object_types_fusion[related_objects]))
             self.fusion_sets.append(fusion_set_tmp)
-            #Build new fusion graph
+            # Build new fusion graph
             fusion_graph = fusion.FusionGraph()
             fusion_graph.add_relations_from(relations)
-            self.fusion_graphs.append(fusion_graph)
+            yield  fusion_graph
+            #self.fusion_graphs.append(fusion_graph)
 
-        #Infer the latent data model for each fusion graph
-        self.latent_data_models=[]
-        fusion_set_counter=0
-        print("\t#Zlivanje grafov oz. preslikava v latentni prostor..")
-        for graph in self.fusion_graphs:
-            fusion_set_counter+=1
-            print("\t\t\t ( " + str(fusion_set_counter) + ' / ' + str(len(self.fusion_graphs)) + " )")
-            fuser = fusion.Dfmf()
-            fuser.fuse(graph)
-            self.latent_data_models.append(fuser)
-        print("***Konec zlivanja!!")
-        #print(self.latent_data_models)
-        #print("TABELE V VZORCU:",self.sample_tables)
 
     def list_latent_data_models(self):
         print("***Izpisujem podatke o grafih v latentnem prostoru")
@@ -1220,102 +1229,6 @@ class Fuse():
                 print('\t\t\t\t\t'+object_type+' shape:  ',self.latent_data_models[x].factor(self.object_types_fusion[object_type]).shape)
             print("\t\t\tRELACIJE", self.latent_data_models[x].relations)
 
-    def score_relation(self,relation):
-        '''
-            :param relation: name of a relation
-            :return: score for a given relation name, that is calculated as a mean of relation matrix reconstruction accuracy
-            across all models.
-        '''
-        '''
-        Pomembno je izbrati metriko razdalje, ki ne preferira matrik manjsih dimenzij
-        '''
-        distance_avg=0
-        nr_models_used=0
-        for x in range(len(self.fusion_sets)):
-            fusion_set=self.fusion_sets[x]
-            object_types_relation=fusion_set[relation]
-            object_type1=object_types_relation[1]
-            object_type2=object_types_relation[2]
-            original_matrix=np.array(object_types_relation[0])
-
-            model=self.latent_data_models[x]
-            object_type1_latent_matrix=model.factor(object_type1)
-            object_type2_latent_matrix=model.factor(object_type2)
-            latent_space_matrix=object_type1_latent_matrix.dot(object_type2_latent_matrix.T)
-
-            if np.isnan(latent_space_matrix).any():
-                #Failsafe - Zakaj so vcasih vrednosti nan?
-                print("\t! V matriki se nahajajo NaN vrednosti!!")
-                continue
-
-            original_matrix_vector=original_matrix.reshape(1,original_matrix.shape[0]*original_matrix.shape[1])
-            latent_space_matrix_vector=latent_space_matrix.reshape(1,latent_space_matrix.shape[0]*latent_space_matrix.shape[1])
-            #distance_avg+=distance_library.seuclidean(original_matrix_vector,latent_space_matrix_vector)
-            '''print("RELATION",relation)
-            print("ORIG",original_matrix_vector)
-            print("LATENT",latent_space_matrix_vector)
-            print("LATENT1",object_type1_latent_matrix)
-            print("LATENT2",object_type2_latent_matrix)'''
-            distance=distance_library.euclidean(original_matrix_vector,latent_space_matrix_vector)
-            # normiraj - deli s stevilom celic v matriki
-            distance_norm=distance/len(original_matrix_vector)
-            distance_avg+=distance_norm
-            nr_models_used+=1
-        if nr_models_used>0:
-            distance_avg/=nr_models_used
-        else:
-            #tehrnicno se razdalje v tem primeru ne da izracunati in bi moral vrniti None
-            distance_avg=9999999999
-        return distance_avg
-
-    def rank_object_type_relations(self):
-        '''
-        Ranks relations between object types based on accuracy of relation matrix reconstruction from
-        product of matrices in latent space.
-        :return: ordered list of tuples each representing one relation between object types and its negative score(distance).
-        Tuple form:  ( relation_name, reconstruction_distance )
-        '''
-        object_type_relations=list(self.relation_matrices.keys())
-        scores=[]
-        for relation in object_type_relations:
-            object_types_in_relation=relation.split(' ')
-            '''if object_types_in_relation[0]==object_types_in_relation[1]:
-                #povezave med dvema istima objektnima tipoma niso zanimive?
-                scores.append(9999999999)
-                continue'''
-            scores.append(self.score_relation(relation))
-        ranked_list_indices = np.argsort(scores)
-        return [(object_type_relations[x],scores[x]) for x in ranked_list_indices]
-
-
-    def select_denser_matrices(self,matrices_list):
-        '''
-        Returns sublist of given matrices_list, of length equal to user-set parameter self.max_number_of_alternative_relation_matrices_to_use.
-        Prefers matrices with higher percentage of non-zero elements.
-        :param matrices_list:
-        :return:
-        '''
-        scores=[]
-        for matrix in matrices_list:
-            matrix=np.array(matrix)
-            scores.append(np.count_nonzero(matrix)/(matrix.shape[0]*matrix.shape[1]))
-        chosen_matrices_indices=np.argsort(scores)[::-1][:self.max_number_of_alternative_relation_matrices_to_use]
-        return [matrices_list[i] for i in chosen_matrices_indices]
-
-    def limit_relation_matrices_number(self):
-        '''
-        Check if number of relation matrices describing any relation between pairs of object types exceeds the limit set by user.
-        If the limit is not respected, select subset of matrices using different heuristics (size, density..)
-        '''
-        print("***Preverjam stevilo alternativnih relacijskih matrik za relacije..")
-        for relation in self.relation_matrices:
-            if len(self.relation_matrices[relation])>self.max_number_of_alternative_relation_matrices_to_use:
-                print("\tRelacija "+str(relation)+" ima "+str(len(self.relation_matrices[relation]))+" kar je vec kot omejitev "+str(self.max_number_of_alternative_relation_matrices_to_use)+" alternativnih relacijskih matrik!")
-                print("\t\t\tIzbiram "+str(self.max_number_of_alternative_relation_matrices_to_use)+" najgostejsih matrik")
-                self.relation_matrices[relation]=self.select_denser_matrices(self.relation_matrices[relation])
-                #self.relation_matrices[relation] = self.select_larger_matrices(self.relation_matrices[relation])
-
-
     def display_database_erm(self,host,database,user,password):
         url='postgresql://'+user+':'+password+'@'+host+'/'+database
         print(url)
@@ -1325,16 +1238,96 @@ class Fuse():
         plt.rcParams["figure.figsize"]=(15,10)
         plt.show()
 
-    def order_relations_OT(self):
+    def order_relations_OT(self,ranked_relation_list,list_length=10):
         print("***Pripravljam rangiran seznam relacij..")
-        ranked_relation_list = self.rank_object_type_relations()
+        #ranked_relation_list = self.rank_object_type_relations()
         print("\n\n\n\n\nRANGIRAN SEZNAM RELACIJ:\n")
         i = 1
         for relation, score in ranked_relation_list:
+            if i==list_length:
+                break
             '''if score>=9999999999:
                 break'''
             print("%5d. %s\t(%d)\n" % (i, relation, score))
             i += 1
+
+
+    def score_relation_reconstruction(self,relation_name,graph_before_fusion,graph_after_fusion):
+        '''
+            :param relation: name of a relation
+            :return: score for a given relation name, that is calculated as a mean of relation matrix reconstruction accuracy
+            across all models.
+        '''
+        '''
+        Pomembno je izbrati metriko razdalje, ki ne preferira matrik manjsih dimenzij
+        '''
+        relation_object_types_names=relation_name.split(' ')
+        object_type1 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[0]][0]
+        object_type2 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[1]][0]
+        relation = [x for x in list(graph_before_fusion.relations.keys()) if x.__contains__(object_type1) and x.__contains__(object_type2)][0]
+        original_matrix=relation.data
+        '''object_type1_latent_matrix = graph_after_fusion.factor(object_type1)
+        object_type2_latent_matrix = graph_after_fusion.factor(object_type2)
+        latent_space_matrix = object_type1_latent_matrix.dot(object_type2_latent_matrix.T)'''
+        latent_space_matrix=graph_after_fusion.complete(relation)
+        original_matrix_vector = original_matrix.reshape(1, original_matrix.shape[0] * original_matrix.shape[1])
+        latent_space_matrix_vector = latent_space_matrix.reshape(1, latent_space_matrix.shape[0] * latent_space_matrix.shape[1])
+        if np.isnan(original_matrix).any():
+            # Failsafe - Zakaj so vcasih vrednosti nan?
+            print("\t\t\t\t\t\t\t! V ORIGINALNI matriki se nahajajo NaN vrednosti!!")
+            if np.isnan(original_matrix).all():
+                print("\t\t\t\t\t\t\t! Vse vrednosti v ORIGINALNI matriki so NaN!!")
+                return 999999999999999
+        if np.isnan(latent_space_matrix).any():
+            # Failsafe - Zakaj so vcasih vrednosti nan?
+            print("\t\t\t\t\t\t\t! V LATENTNI matriki se nahajajo NaN vrednosti!!")
+            if np.isnan(latent_space_matrix).all():
+                print("\t\t\t\t\t\t\t! Vse vrednosti v LATENTNI matriki so NaN!!")
+                return 999999999999999
+
+        #distance = distance_library.euclidean(original_matrix_vector, latent_space_matrix_vector)
+        #distance=np.sqrt(sum((original_matrix_vector[x]-latent_space_matrix_vector[x])**2 for x in range(len(latent_space_matrix_vector)) if not np.isnan(original_matrix_vector[x]) and not np.isnan(latent_space_matrix_vector[x])) / len(latent_space_matrix_vector))
+        #RMSE razdalja se izracuna zgolj za tiste elemente, ki niso NaN
+        distance=np.sqrt(sum([(original_matrix_vector[0][x]-latent_space_matrix_vector[0][x])**2 for x in range(len(latent_space_matrix_vector[0])) if not np.isnan(original_matrix_vector[0][x]) and not np.isnan(latent_space_matrix_vector[0][x])]) / np.count_nonzero(~np.isnan(original_matrix_vector[0])))
+        return distance
+
+    def fuse_data(self):
+        '''
+        https://github.com/marinkaz/scikit-fusion
+        :return:
+        '''
+        print("***Zlivanje podatkov..")
+        # Infer the latent data model for each fusion graph
+        #self.latent_data_models = []
+        object_type_relations = list(self.relation_matrices.keys())
+        fusion_set_counter=0
+        models_scores={}
+        for graph in self.generate_fusion_graphs():
+            fusion_set_counter+=1
+            #print("\t\t\t ( " + str(fusion_set_counter) + ' / ' + str(len(self.generate_fusion_graphs())) + " )")
+            print("\t\t\t\t\t ..zlivam graf..")
+            fuser = fusion.Dfmf()
+            fuser.fuse(graph)
+            #self.latent_data_models.append(fuser)
+            relation_scores={}
+            relation_counter=1
+            for relation in object_type_relations:
+                print("\t\t\t\t\t( "+str(relation_counter)+" / "+str(len(object_type_relations))+" ) ..ocenjujem rekonstrukcijo relacije: ",relation)
+                distance=self.score_relation_reconstruction(relation,graph,fuser)
+                relation_scores[relation]=distance
+                relation_counter+=1
+            models_scores[fusion_set_counter]=relation_scores
+        print("***Konec zlivanja!!")
+        relation_scores_avg={}
+        for relation in object_type_relations:
+            sum=0
+            for model in models_scores:
+                sum+=models_scores[model][relation]
+            relation_scores_avg[relation]=sum/len(models_scores)
+        relation_scores_avg_list=[(x,relation_scores_avg[x]) for x in relation_scores_avg]
+        relation_scores_avg_list.sort(key=lambda tup: tup[1])
+        return  relation_scores_avg_list
+
 
     def __init__(self,host,database,user,password):
             cas_zacetka=datetime.now()
@@ -1378,9 +1371,9 @@ class Fuse():
             #print("columns fusion: ",self.column_fusion)
             self.build_relation_matricies()
             self.limit_relation_matrices_number()
-            self.fuse_data()
-            self.latent_data_models
-            self.order_relations_OT()
+            relation_scores=self.fuse_data()
+            #self.latent_data_models
+            self.order_relations_OT(relation_scores)
             self.checkpoint_file.close()
             cas_konca=datetime.now()
             print("\n\n\n===== Postopek je trajal:\t",cas_konca-cas_zacetka)
@@ -1388,5 +1381,5 @@ class Fuse():
 
 
 if __name__ == "__main__":
-    #fuse = Fuse(host='192.168.217.128', database='avtomobilizem1', user='postgres', password='geslo123')
-    fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123')
+    fuse = Fuse(host='192.168.217.128', database='avtomobilizem1', user='postgres', password='geslo123')
+    #fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123')
