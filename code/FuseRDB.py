@@ -96,7 +96,7 @@ class Fuse():
         print("***Ocenjujem primerno omejitev dimenzij relacijskih matrik")
         svmem=psutil.virtual_memory()
         print("\t#",svmem)
-        return 20
+        return 100
 
     def restore_from_checkpoint(self,host,database):
         '''
@@ -501,7 +501,8 @@ class Fuse():
             -dictionary modified_tables contains modified tables (with aditional columns from joined tables) that shuld be used for further work instead of original tables within a database.
         '''
         '''
-        Alternativno: namesto da se hrani celotne modificirane matrike, shrani le SQL poizvedbe za njihovo sestavo
+        Ker katera od tabel, ki predstavljajo 'slepo vejo' oz. so zgolj 'razsiritev atributov' lahko izpade med vzorcenjem,
+        je potrebno pognati join_outmost_table pred vzorcenjem?
         '''
         print("***pridruzevanje zunanjih tabel...")
         #print(self.excluded_tables)
@@ -520,10 +521,16 @@ class Fuse():
         tables_without_fk=set([x for x in self.tables if x not in tables_with_fk])'''
         tables_without_fk=set([x[1] for x in self.tables if x[1] not in tables_nr_fk])
         tables_without_fk_having_connected_tables = set([x[3] for x in self.foreign_keys if x[3] in tables_without_fk])
-        tables_without_fk_having_connected_tables_with_one_fk=set([x for x in tables_without_fk_having_connected_tables if tables_nr_fk[x]==1])
+        #print("Tables w/e fk having connected tables",tables_without_fk_having_connected_tables)
+        #tables_without_fk_having_connected_tables_with_one_fk=set([x for x in tables_without_fk_having_connected_tables if tables_nr_fk[x]==1])
+        tables_without_fk_having_connected_tables_with_one_fk =set([x[3] for x in self.foreign_keys if x[3] in tables_without_fk and tables_nr_fk[x[1]]==1])
+        #print("Tables w/e fk having connected tables with 1 fk",tables_without_fk_having_connected_tables_with_one_fk)
         tables_connected_to_tables_without_fk=set([x[1] for x in self.foreign_keys if x[3] in tables_without_fk])
+        #print("Tables connected to tables w/e fk",tables_connected_to_tables_without_fk)
         tables_with_one_fk_connected_to_tables_without_fk=set([x for x in tables_connected_to_tables_without_fk if tables_nr_fk[x]==1])
+        #print("Tables with one fk connected to tables without fk",tables_with_one_fk_connected_to_tables_without_fk)
         tables_to_modify=tables_with_one_fk_connected_to_tables_without_fk
+        #print("Tables to modify",tables_to_modify)
         self.excluded_tables = tables_without_fk_having_connected_tables_with_one_fk
 
         len_tables_to_modify_tmp=-1
@@ -531,7 +538,8 @@ class Fuse():
             len_tables_to_modify_tmp=len(tables_to_modify)
             tables_without_fk = tables_to_modify
             tables_without_fk_having_connected_tables = set([x[3] for x in self.foreign_keys if x[3] in tables_without_fk])
-            tables_without_fk_having_connected_tables_with_one_fk = set([x for x in tables_without_fk_having_connected_tables if tables_nr_fk[x] == 1])
+            #tables_without_fk_having_connected_tables_with_one_fk = set([x for x in tables_without_fk_having_connected_tables if tables_nr_fk[x] == 1])
+            tables_without_fk_having_connected_tables_with_one_fk =set([x[3] for x in self.foreign_keys if x[3] in tables_without_fk and tables_nr_fk[x[1]]==1])
             tables_connected_to_tables_without_fk = set([x[1] for x in self.foreign_keys if x[3] in tables_without_fk])
             tables_with_one_fk_connected_to_tables_without_fk = set([x for x in tables_connected_to_tables_without_fk if tables_nr_fk[x] == 1])
             tables_to_modify_having_connected_tables_with_one_fk=set([x[3] for x in self.foreign_keys if x[3] in tables_to_modify and tables_nr_fk[x[1]]==1])
@@ -539,18 +547,46 @@ class Fuse():
             self.excluded_tables |= tables_without_fk_having_connected_tables_with_one_fk
 
         print("###EXCLUDED TABLES:",self.excluded_tables)
+        print("###TABLES TO MODIFY",tables_to_modify)
 
         for t in tables_to_modify:
             sql_query = "SELECT * FROM "+t+' '
+            if False and self.presampling_mode:
+                sql_query+=" WHERE "
+                for y in self.sample[t][1]:
+                    sql_query += ' ( '
+                    for x in range(len(self.sample[t][0])):
+                        sql_query += t+"." + str(self.sample[t][0][x]) + " = '" + str(y[x]) + "' AND "
+                    sql_query = sql_query[:-len(" AND ")]
+                    sql_query += ') '
+                    sql_query += ' OR '
+                sql_query = sql_query[:-len(" OR ")]
+
             table=t
+            #print("TABLE",table)
+            table_connected_to_table=t
             while True:
-                table_connected_to_table=set([x[3] for x in self.foreign_keys if x[1]==t])
+                table_connected_to_table=[x[3] for x in self.foreign_keys if x[1]==table_connected_to_table]
+                #print("Table connected to table",table_connected_to_table)
                 if len(table_connected_to_table)==0:
                     break
                 else:
                     table_connected_to_table=table_connected_to_table[0]
                     sql_query+=" INNER JOIN "+table_connected_to_table+" ON "
                     sql_query+=' AND '.join(x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4]+' ' for x in self.foreign_keys if x[1]==table and x[3]==table_connected_to_table)
+
+                    if False and self.presampling_mode:
+                        sql_query += " AND "
+                        for y in self.sample[table_connected_to_table][1]:
+                            sql_query += ' ( '
+                            for x in range(len(self.sample[table_connected_to_table][0])):
+                                sql_query += t + "." + str(self.sample[table_connected_to_table][0][x]) + " = '" + str(y[x]) + "' AND "
+                            sql_query = sql_query[:-len(" AND ")]
+                            sql_query += ') '
+                            sql_query += ' OR '
+                        sql_query = sql_query[:-len(" OR ")]
+
+                table=table_connected_to_table
             sql_query+=';'
             self.modified_tables[t]=sql_query
 
@@ -1264,7 +1300,8 @@ class Fuse():
         relation_object_types_names=relation_name.split(' ')
         object_type1 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[0]][0]
         object_type2 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[1]][0]
-        relation = [x for x in list(graph_before_fusion.relations.keys()) if x.__contains__(object_type1) and x.__contains__(object_type2)][0]
+        #relation = [x for x in list(graph_before_fusion.relations.keys()) if x.__contains__(object_type1) and x.__contains__(object_type2)][0]
+        relation = [x for x in list(graph_before_fusion.relations.keys()) if (x.row_type==object_type1 and x.col_type==object_type2) or (x.row_type==object_type2 and x.col_type==object_type1)][0]
         original_matrix=relation.data
         '''object_type1_latent_matrix = graph_after_fusion.factor(object_type1)
         object_type2_latent_matrix = graph_after_fusion.factor(object_type2)
@@ -1312,7 +1349,12 @@ class Fuse():
             relation_scores={}
             relation_counter=1
             for relation in object_type_relations:
+                relation_object_types_names=relation.split(' ')
                 print("\t\t\t\t\t( "+str(relation_counter)+" / "+str(len(object_type_relations))+" ) ..ocenjujem rekonstrukcijo relacije: ",relation)
+                if relation_object_types_names[0]==relation_object_types_names[1]:
+                    print("\t\t\t\t\t\t\t Preskocil relacijo med dvema enakima objektnima tipoma..",relation)
+                    relation_counter+=1
+                    continue
                 distance=self.score_relation_reconstruction(relation,graph,fuser)
                 relation_scores[relation]=distance
                 relation_counter+=1
@@ -1320,6 +1362,10 @@ class Fuse():
         print("***Konec zlivanja!!")
         relation_scores_avg={}
         for relation in object_type_relations:
+            relation_object_types_names = relation.split(' ')
+            if relation_object_types_names[0] == relation_object_types_names[1]:
+                print("\t\t\t\t\t Preskocil relacijo med dvema enakima objektnima tipoma..", relation)
+                continue
             sum=0
             for model in models_scores:
                 sum+=models_scores[model][relation]
@@ -1329,14 +1375,17 @@ class Fuse():
         return  relation_scores_avg_list
 
 
-    def __init__(self,host,database,user,password):
+    def __init__(self,host,database,user,password,presampling_mode=None,join_outmost_tables_mode=False,dummy_var_treshold=20,object_nr_limit=None,alternative_matrices_nr_limit=25):
             cas_zacetka=datetime.now()
             self.postgres_to_python_data_types={'CHARACTER':'str', 'CHAR':'str', 'VARCHAR':'str', 'TEXT':'str', 'SMALLINT':'integer', "INTEGER":'integer', 'INT':'integer', 'SERIAL':'integer', 'FLOAT':'float', 'real':'float', 'float8':'float', 'numeric':'float','DATE':'datetime'}
             print('***Initcializacija..')
-            self.join_outmost_tables_mode = False #Ce True se pred zlivanjem stolpci obrobnih tabel (brez 'izhodnih' tujih kljucev) prepisejo v tabele, ki jih referencirajo
-            self.dummy_variable_treshold=0 #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
-            self.max_number_of_objects=self.estimate_relation_matrix_dimension_constraint()
-            self.max_number_of_alternative_relation_matrices_to_use=10 #Omeji stevilo alternativnih relacijskih matrik, ki naj se upostevajo za relacijo med katerima koli objektnima tipoma (ce se preseze se matrike izbere z razlicnimi hevristikami)
+            self.join_outmost_tables_mode = join_outmost_tables_mode #Ce True se pred zlivanjem stolpci obrobnih tabel (brez 'izhodnih' tujih kljucev) prepisejo v tabele, ki jih referencirajo
+            self.dummy_variable_treshold=dummy_var_treshold #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
+            if object_nr_limit==None:
+                self.max_number_of_objects=self.estimate_relation_matrix_dimension_constraint()
+            else:
+                self.max_number_of_objects=object_nr_limit
+            self.max_number_of_alternative_relation_matrices_to_use=alternative_matrices_nr_limit #Omeji stevilo alternativnih relacijskih matrik, ki naj se upostevajo za relacijo med katerima koli objektnima tipoma (ce se preseze se matrike izbere z razlicnimi hevristikami)
 
             self.foreign_keys=None
             self.primary_keys=None
@@ -1355,22 +1404,26 @@ class Fuse():
             self.restore_from_checkpoint(host,database)
             #self.get_column_data_types() #hitreje: pridobi podatkovne tipe samo za stoplpce v vmesnih tabelah
             self.list_tables()
-            self.presampling_mode=True if self.estimate_complexity()>=3 else False
+            if presampling_mode==None:
+                self.presampling_mode=True if self.estimate_complexity()>=3 else False
+            else:
+                self.presampling_mode=presampling_mode
             self.list_key_constraints()
             self.list_object_types()
             self.list_connected_tables()
             self.list_tables_gte2_fk()
-            if self.join_outmost_tables_mode:
-                self.join_outmost_tables()
+            print("MODIFIED TABLES SQL:",self.modified_tables)
             #self.get_column_data_types_tables_gte2_fk()
             self.filter_columns_fusion()
             if self.presampling_mode:
                 self.presample()
+            if self.join_outmost_tables_mode:
+                self.join_outmost_tables()
             #print("tabele gte2 fk: ", self.tables_gte2_fk)
             #print("vrste stolpcev v tabelah gte2 fk: ",self.column_data_type)
             #print("columns fusion: ",self.column_fusion)
             self.build_relation_matricies()
-            self.limit_relation_matrices_number()
+            #self.limit_relation_matrices_number()
             relation_scores=self.fuse_data()
             #self.latent_data_models
             self.order_relations_OT(relation_scores)
@@ -1381,5 +1434,5 @@ class Fuse():
 
 
 if __name__ == "__main__":
-    fuse = Fuse(host='192.168.217.128', database='avtomobilizem1', user='postgres', password='geslo123')
-    #fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123')
+    fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=1, join_outmost_tables_mode=True, presampling_mode=True)
+    #fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True)
