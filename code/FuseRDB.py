@@ -777,10 +777,6 @@ class Fuse():
             #move dummy variables from begining to end of table!
         #print("ROWS AFT",rows)
 
-        print("%%%%%STEVILO OBJEKTOV TABLE1",len(objects_table1[1]),objects_table1)
-        print("%%%%%STEVILO OBJEKTOV TABLE2",len(objects_table2[1]),objects_table2)
-
-
         for i in range(nr_columns):
             #R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
             R = np.empty((len(objects_table1[1]), len(objects_table2[1])))
@@ -869,8 +865,6 @@ class Fuse():
         Get list of unique combinations of values for columns representing (composite) primary key.
         Returns list with header(tuple of ordered column names) at index 0 and list of different value combinations (tuples) at index 1.
         '''
-        print("%%%%IDS FOR TABLE",table)
-
         pk_columns = [x[1] for x in self.primary_keys if x[0]==table]
         if self.presampling_mode:
             sql_query="SELECT " + ','.join(pk_columns) + " FROM " + table
@@ -1270,8 +1264,14 @@ class Fuse():
                     relational_matrix = np.array(relational[-1])
                 # print("\t\t",relational_matrix.shape)
                 # print(relational_matrix)
+
+
                 # Mask NaNs
                 relational_matrix = np.ma.array(relational_matrix, mask=np.isnan(relational_matrix))
+                # Scale values to fit interval [0,1]
+                if (relational_matrix < 0).any() or (relational_matrix > 1).any():
+                    relational_matrix = self.scale(relational_matrix, 0, 1)
+
                 relational = relational[0]
                 related_objects = relational_matrices_keys[-i - 1].split(' ')
                 # print("RELATED OBJECTS",related_objects)
@@ -1292,8 +1292,13 @@ class Fuse():
                     constraint_matrix = np.array(constraint[-1])
                 # print("\t\t",constraint_matrix.shape)
                 # print(constraint_matrix)
+
                 # Mask NaNs
                 constraint_matrix = np.ma.array(constraint_matrix, mask=np.isnan(constraint_matrix))
+                # Scale values to fit interval [0,1]
+                if (constraint_matrix < 0).any() or (constraint_matrix > 1).any():
+                    constraint_matrix = self.scale(constraint_matrix, 0, 1)
+
                 constraint = constraint[0]
                 related_objects = constraint_matrices_keys[-i - 1]
                 self.object_types_in_fusion_scheme.add(related_objects)
@@ -1341,56 +1346,11 @@ class Fuse():
             print("%5d. %s\t(%0.5f)\n" % (i, relation, score))
             i += 1
 
-    """
     def score_relation_reconstruction(self,relation_name,graph_before_fusion,graph_after_fusion):
         '''
             :param relation: name of a relation
             :return: score for a given relation name, that is calculated as a mean of relation matrix reconstruction accuracy
             across all models.
-        '''
-        '''
-        Pomembno je izbrati metriko razdalje, ki ne preferira matrik manjsih dimenzij
-        '''
-        relation_object_types_names=relation_name.split(' ')
-        object_type1 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[0]][0]
-        object_type2 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[1]][0]
-        #relation = [x for x in list(graph_before_fusion.relations.keys()) if x.__contains__(object_type1) and x.__contains__(object_type2)][0]
-        relation = [x for x in list(graph_before_fusion.relations.keys()) if (x.row_type==object_type1 and x.col_type==object_type2) or (x.row_type==object_type2 and x.col_type==object_type1)][0]
-        original_matrix=relation.data
-        '''object_type1_latent_matrix = graph_after_fusion.factor(object_type1)
-        object_type2_latent_matrix = graph_after_fusion.factor(object_type2)
-        latent_space_matrix = object_type1_latent_matrix.dot(object_type2_latent_matrix.T)'''
-        latent_space_matrix=graph_after_fusion.complete(relation)
-        original_matrix_vector = original_matrix.reshape(1, original_matrix.shape[0] * original_matrix.shape[1])
-        latent_space_matrix_vector = latent_space_matrix.reshape(1, latent_space_matrix.shape[0] * latent_space_matrix.shape[1])
-        if np.isnan(original_matrix).any():
-            # Failsafe - Zakaj so vcasih vrednosti nan?
-            print("\t\t\t\t\t\t\t! V ORIGINALNI matriki se nahajajo NaN vrednosti!!")
-            if np.isnan(original_matrix).all():
-                print("\t\t\t\t\t\t\t! Vse vrednosti v ORIGINALNI matriki so NaN!!")
-                return 999999999999999
-        if np.isnan(latent_space_matrix).any():
-            # Failsafe - Zakaj so vcasih vrednosti nan?
-            print("\t\t\t\t\t\t\t! V LATENTNI matriki se nahajajo NaN vrednosti!!")
-            if np.isnan(latent_space_matrix).all():
-                print("\t\t\t\t\t\t\t! Vse vrednosti v LATENTNI matriki so NaN!!")
-                return 999999999999999
-
-        #distance = distance_library.euclidean(original_matrix_vector, latent_space_matrix_vector)
-        #distance=np.sqrt(sum((original_matrix_vector[x]-latent_space_matrix_vector[x])**2 for x in range(len(latent_space_matrix_vector)) if not np.isnan(original_matrix_vector[x]) and not np.isnan(latent_space_matrix_vector[x])) / len(latent_space_matrix_vector))
-        #RMSE razdalja se izracuna zgolj za tiste elemente, ki niso NaN
-        distance=np.sqrt(sum([(original_matrix_vector[0][x]-latent_space_matrix_vector[0][x])**2 for x in range(len(latent_space_matrix_vector[0])) if not np.isnan(original_matrix_vector[0][x]) and not np.isnan(latent_space_matrix_vector[0][x])]) / np.count_nonzero(~np.isnan(original_matrix_vector[0])))
-        return distance
-    """
-
-    def score_relation_reconstruction(self,relation_name,graph_before_fusion,graph_after_fusion):
-        '''
-            :param relation: name of a relation
-            :return: score for a given relation name, that is calculated as a mean of relation matrix reconstruction accuracy
-            across all models.
-        '''
-        '''
-        Pomembno je izbrati metriko razdalje, ki ne preferira matrik manjsih dimenzij
         '''
         relation_object_types_names=relation_name.split(' ')
         object_type1 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[0]][0]
@@ -1417,8 +1377,6 @@ class Fuse():
         # Infer the latent data model for each fusion graph
         #self.latent_data_models = []
         object_type_relations = list(self.relation_matrices.keys())
-
-        print("!!!!!!!!!OT RELATIONS",object_type_relations)
 
         fusion_set_counter=0
         models_scores={}
