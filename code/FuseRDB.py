@@ -98,6 +98,12 @@ class Fuse():
         print("\t#",svmem)
         return 100
 
+    def rmse(self,y_true, y_pred):
+        return np.sqrt(np.sum((y_true - y_pred) ** 2) / y_true.size)
+
+    def scale(self,X, amin, amax):
+        return (X - X.min()) / (X.max() - X.min()) * (amax - amin) + amin
+
     def restore_from_checkpoint(self,host,database):
         '''
             Load data from existing checkpoint file for specified database connection,
@@ -598,8 +604,7 @@ class Fuse():
             for x in self.modified_tables:
                 print(x)
                 self.checkpoint_file.write(x+"\n")
-                for y in self.modified_tables[x]:
-                    self.checkpoint_file.write("\t".join([str(z) for z in y])+"\n")
+                self.checkpoint_file.write(self.modified_tables[x]+"\n")
                 self.checkpoint_file.write("!\n")
             self.checkpoint_file.write("\n")
 
@@ -659,9 +664,11 @@ class Fuse():
         '''
 
         #TEST!!!!!!!!!!!!!!  quick-and-dirty fix?
+        """
         if ' ' in column_id:
             column_id=column_id[column_id.index(' '):]
         column_id=column_id.strip()
+        """
         '''table_column_names=self.list_table_columns(table)
         if column_id not in table_column_names:
             print("COLUMN ",column_id," NOT IN ",table_column_names)
@@ -750,7 +757,9 @@ class Fuse():
         #print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         #self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         rows=self.cursor.fetchall()
+        #print("ROWS BEFORE", rows)
         rows = np.array(rows)
+
 
         nr_columns=1
         if rows.shape[0]>0 and (self.column_data_type[table+' '+column_id][1]=="str" or self.column_data_type[table+' '+column_id][1]=="text"):
@@ -766,6 +775,10 @@ class Fuse():
             rows=np.append(rows,dummy_variables,1)
             #dummy variable trap?
             #move dummy variables from begining to end of table!
+        #print("ROWS AFT",rows)
+
+        print("%%%%%STEVILO OBJEKTOV TABLE1",len(objects_table1[1]),objects_table1)
+        print("%%%%%STEVILO OBJEKTOV TABLE2",len(objects_table2[1]),objects_table2)
 
 
         for i in range(nr_columns):
@@ -773,15 +786,22 @@ class Fuse():
             R = np.empty((len(objects_table1[1]), len(objects_table2[1])))
             R.fill(np.nan)
             matrices.append(R)
+        '''    
         column_order_row_o1=[x[4].strip() for x in table_table1_fk]
         column_order_row_o2 = [x[4].strip() for x in table_table2_fk]
+        '''
+        column_order_row_o1 = [x[4] for x in table_table1_fk]
+        column_order_row_o2 = [x[4] for x in table_table2_fk]
         #print("fkLINK 1",fk_link1)
         objects_table1_data_type_postgres=[self.column_data_type[table1+' '+x][1] for x in objects_table1[0]]
         objects_table1_data_type_python=[self.postgres_to_python_data_types[x.upper()] for x in objects_table1_data_type_postgres]
         objects_table2_data_type_postgres = [self.column_data_type[table2 + ' ' + x][1] for x in objects_table2[0]]
         objects_table2_data_type_python=[self.postgres_to_python_data_types[x.upper()] for x in objects_table2_data_type_postgres]
         for row in rows:
+            #print("ROW:",row)
+            #print("LEN O1",len(objects_table1[0]))
             c1=row[0:len(objects_table1[0])]
+            #print("C1",c1)
             c1_tmp=[]
             for x in range(len(c1)):
                 if objects_table1_data_type_python[x]=='integer':
@@ -790,12 +810,13 @@ class Fuse():
                     c1_tmp.append(float(c1[x]))
                 else:
                     c1_tmp.append(str(c1[x]))
+            #print("C1 TMP",c1_tmp)
             c1=c1_tmp
             #REMOVE .strip() quickfix
             #c1=tuple([c1[column_order_row_o1.index(x)] for x in objects_table1[0]])
             c1=[c1[column_order_row_o1.index(x)] for x in objects_table1[0]]
             #print("TYPE? ",str(type(c1[0]))=="<class \'numpy.str_\'>")
-            c1=[x.strip() if type(x)=='str' or str(type(x))=="<class \'numpy.str_\'>" else x for x in c1]
+            ###c1=[x.strip() if type(x)=='str' or str(type(x))=="<class \'numpy.str_\'>" else x for x in c1]
 
             c1=tuple(c1)
             #c2=row[len(objects_table1[0]):-nr_columns]
@@ -812,21 +833,34 @@ class Fuse():
             #c2 = tuple([c2[column_order_row_o2.index(x)].strip() for x in objects_table2[0]])
             c2 = [c2[column_order_row_o2.index(x)] for x in objects_table2[0]]
             #print("TYPE? ", str(type(c2[0])) == "<class \'numpy.str_\'>")
-            c2=[x.strip() if type(x)=='str' or type(x)=="<class \'numpy.str_\'>" else x for x in c2]
+            ###c2=[x.strip() if type(x)=='str' or type(x)=="<class \'numpy.str_\'>" else x for x in c2]
             c2=tuple(c2)
 
 
 
             v=row[-nr_columns:]
             for i in range(nr_columns):
-                '''print("OBJECTS 1",objects_table1)
+
+                #Zacasni popravek specificno za testno podatkovno bazo avtomobilizem2 ... hrosc?
+                #Samo kadar vzorcim podatke..
+                if self.presampling_mode:
+                    if '5m5500' in c1[0] or '1m1100' in c1[0] or '3m3300' in c1[0]:
+                        print("FIXXXXXXXXXXXXX")
+                        #c1[0]=c1[0][:6]
+                        c1=tuple([c1[x][:6] if x==0 else c1[x] for x in range(len(c1))])
+                    if '5m5500' in c2[0] or '1m1100' in c2[0] or '3m3300' in c2[0]:
+                        print("FIXXXXXXXXXXXXX")
+                        c2=tuple([c2[x][:6] if x==0 else c2[x] for x in range(len(c2))])
+
+                #print("OBJECTS 1",objects_table1)
                 #print("TYPE 1",self.column_data_type[table1])
-                print("OBJECTS 2",objects_table2)
+                #print("OBJECTS 2",objects_table2)
                 #print("TYPE 2",self.column_data_type[table2])
-                print("C1",c1)
-                print("C2",c2)
-                print("C1 TYPES",str(type(c1[0])))
-                print("C2 TYPES",str(type(c2[0])))'''
+                #print("C1",c1)
+                #print("C2",c2)
+                #print("C1 TYPES",str(type(c1[0])))
+                #print("C2 TYPES",str(type(c2[0])))
+
                 matrices[i][list(objects_table1[1]).index(c1)][list(objects_table2[1]).index(c2)]=v[i]
         return matrices
 
@@ -835,6 +869,8 @@ class Fuse():
         Get list of unique combinations of values for columns representing (composite) primary key.
         Returns list with header(tuple of ordered column names) at index 0 and list of different value combinations (tuples) at index 1.
         '''
+        print("%%%%IDS FOR TABLE",table)
+
         pk_columns = [x[1] for x in self.primary_keys if x[0]==table]
         if self.presampling_mode:
             sql_query="SELECT " + ','.join(pk_columns) + " FROM " + table
@@ -999,11 +1035,14 @@ class Fuse():
                     table_combo_count+=1
                     print("\t\t\t( "+str(table_combo_count)+' / '+str(len(fk_names_linked_to_t))+" )\tGradim omejitvene oz. indikatorske matrike za povezavo s:",t1)
                     if self.presampling_mode:
-                        if t1 not in self.sample_tables:
-                            '''print("\tTABELE NI V VZORCU!!")
-                            print("T1", t1)
+                        if t1[2] not in self.sample_tables:
+                            print("\tTABELE NI V VZORCU!!",t1[2])
+                            '''print("T1", t1)
                             print("SAMPLE", self.sample_tables)'''
                             continue
+                    print("TIK PRED KATASTROFO")
+                    print("TTTTTT",t)
+                    print("TTT1111",t1)
                     matrices=self.gen_indicator_matrix_for_relation(t,t1)
                     if t==t1[2]:
                         if not t in constraint_matrices:
@@ -1075,6 +1114,9 @@ class Fuse():
         
         :return:
         '''
+        """
+        Kaj pa primer, ko je 'vmesna tabela' povezana na drugo 'vmesno tabelo' in bo ta pac pristala v vzorcu?
+        """
         if not self.sample==None:
             return
 
@@ -1116,9 +1158,16 @@ class Fuse():
                 relation_row=self.cursor.fetchall()[0]
                 if table_is_ot:
                     if not t in self.sample:
+                        self.sample_tables.add(t)
                         self.sample[t]=[table_ids[0],set()]
                     self.sample[t][1].add(tuple(relation_id))
                     #self.sample[t] = list(set(self.sample[t]))
+                """
+                #Vse vmesne tabele morajo biti v vzorcu, ne le tiste prepoznane kot Objektni Tip
+                if not t in self.sample:
+                    self.sample[t] = [table_ids[0], set()]
+                self.sample[t][1].add(tuple(relation_id))
+                """
 
                 for referenced_table in referenced_tables:
                     self.sample_tables.add(referenced_table)
@@ -1148,7 +1197,8 @@ class Fuse():
                 number_selected_objects=max(nr_rows_tables)
                 nr_rows_tables.remove(number_selected_objects)
                 number_selected_objects+=max(nr_rows_tables)
-        #print("\tSAMPLE:",self.sample)
+        print("!!!!!!SAMPLE:",self.sample)
+        print("!!!!!!SAMPLE TABLES",self.sample_tables)
         #Save sample to disk
         self.checkpoint_file.write("#SAMPLE\n")
         for key in self.sample:
@@ -1220,6 +1270,8 @@ class Fuse():
                     relational_matrix = np.array(relational[-1])
                 # print("\t\t",relational_matrix.shape)
                 # print(relational_matrix)
+                # Mask NaNs
+                relational_matrix = np.ma.array(relational_matrix, mask=np.isnan(relational_matrix))
                 relational = relational[0]
                 related_objects = relational_matrices_keys[-i - 1].split(' ')
                 # print("RELATED OBJECTS",related_objects)
@@ -1240,6 +1292,8 @@ class Fuse():
                     constraint_matrix = np.array(constraint[-1])
                 # print("\t\t",constraint_matrix.shape)
                 # print(constraint_matrix)
+                # Mask NaNs
+                constraint_matrix = np.ma.array(constraint_matrix, mask=np.isnan(constraint_matrix))
                 constraint = constraint[0]
                 related_objects = constraint_matrices_keys[-i - 1]
                 self.object_types_in_fusion_scheme.add(related_objects)
@@ -1284,10 +1338,10 @@ class Fuse():
                 break
             '''if score>=9999999999:
                 break'''
-            print("%5d. %s\t(%d)\n" % (i, relation, score))
+            print("%5d. %s\t(%0.5f)\n" % (i, relation, score))
             i += 1
 
-
+    """
     def score_relation_reconstruction(self,relation_name,graph_before_fusion,graph_after_fusion):
         '''
             :param relation: name of a relation
@@ -1327,6 +1381,32 @@ class Fuse():
         #RMSE razdalja se izracuna zgolj za tiste elemente, ki niso NaN
         distance=np.sqrt(sum([(original_matrix_vector[0][x]-latent_space_matrix_vector[0][x])**2 for x in range(len(latent_space_matrix_vector[0])) if not np.isnan(original_matrix_vector[0][x]) and not np.isnan(latent_space_matrix_vector[0][x])]) / np.count_nonzero(~np.isnan(original_matrix_vector[0])))
         return distance
+    """
+
+    def score_relation_reconstruction(self,relation_name,graph_before_fusion,graph_after_fusion):
+        '''
+            :param relation: name of a relation
+            :return: score for a given relation name, that is calculated as a mean of relation matrix reconstruction accuracy
+            across all models.
+        '''
+        '''
+        Pomembno je izbrati metriko razdalje, ki ne preferira matrik manjsih dimenzij
+        '''
+        relation_object_types_names=relation_name.split(' ')
+        object_type1 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[0]][0]
+        object_type2 = [x for x in graph_before_fusion.object_types.keys() if x.name==relation_object_types_names[1]][0]
+        #relation = [x for x in list(graph_before_fusion.relations.keys()) if x.__contains__(object_type1) and x.__contains__(object_type2)][0]
+        relation = [x for x in list(graph_before_fusion.relations.keys()) if (x.row_type==object_type1 and x.col_type==object_type2) or (x.row_type==object_type2 and x.col_type==object_type1)][0]
+        original_matrix=relation.data
+        '''object_type1_latent_matrix = graph_after_fusion.factor(object_type1)
+        object_type2_latent_matrix = graph_after_fusion.factor(object_type2)
+        latent_space_matrix = object_type1_latent_matrix.dot(object_type2_latent_matrix.T)'''
+        latent_space_matrix=graph_after_fusion.complete(relation)
+        original_matrix_vector = original_matrix.reshape(1, original_matrix.shape[0] * original_matrix.shape[1])
+        latent_space_matrix_vector = latent_space_matrix.reshape(1, latent_space_matrix.shape[0] * latent_space_matrix.shape[1])
+
+        distance=self.rmse(original_matrix_vector,latent_space_matrix_vector)
+        return distance
 
     def fuse_data(self):
         '''
@@ -1337,6 +1417,9 @@ class Fuse():
         # Infer the latent data model for each fusion graph
         #self.latent_data_models = []
         object_type_relations = list(self.relation_matrices.keys())
+
+        print("!!!!!!!!!OT RELATIONS",object_type_relations)
+
         fusion_set_counter=0
         models_scores={}
         for graph in self.generate_fusion_graphs():
@@ -1358,6 +1441,9 @@ class Fuse():
                 distance=self.score_relation_reconstruction(relation,graph,fuser)
                 relation_scores[relation]=distance
                 relation_counter+=1
+                #print ordered relation list for this model
+            print("\t\t\t\t\tUREJEN SEZNAM RELACIJ:",sorted([(k,relation_scores[k]) for k in relation_scores], key=lambda  x: x[1]))
+            #print("\t\t\t\t\tUREJEN SEZNAM RELACIJ:",[(k,relation_scores[k]) for k in relation_scores].sort(key=lambda tup: tup[1]))
             models_scores[fusion_set_counter]=relation_scores
         print("***Konec zlivanja!!")
         relation_scores_avg={}
@@ -1434,5 +1520,5 @@ class Fuse():
 
 
 if __name__ == "__main__":
-    fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=1, join_outmost_tables_mode=True, presampling_mode=True)
+    fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
     #fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True)
