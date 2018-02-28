@@ -20,6 +20,8 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from scipy.spatial import distance as distance_library
 from datetime import datetime
+import os.path
+
 
 
 
@@ -28,20 +30,45 @@ from datetime import datetime
 
 class Fuse():
     '''
-    1.Popisi vse tabele
-        popisi vse "vmesne tabele" (z >=2 tujima kljucema)
-        popisi podatkovne tipe za vsak stolpec znotraj "vmesnih tabel"
-    2.sestavi vse mozne relacijske matrike
-            za vsako "vmesno tabelo"
-                za vsak mozen par tujih kljucev znotraj "vmesne tabele":
-                    za vsak stolpec znotraj "vmesne tabele", ki:
-                        vsebuje numericne vrednosti
-                        vsebuje boolean vrednosti
-                        vsebuje vrednosti, ki se jih da prevesti na numericne (koncen nabor vrednosti)
-                        ni oznacen kot tuji kljuc
-                    zgradi ustrezno relacijsko matriko
-    3.sestavi vse mozne matrike relacijskih matrik (in matrike omejitvenih matrik)
-    4.scikit-fusion
+    1.Povezi se na podatkovno bazo in poisci:
+	-imena tabel
+	-stolpce vsake tabele in opise podatkovnih tipov, ki jih hranijo
+	-stolpce, ki sestavljajo primarni kljuc za vsako tabelo
+	-tuje kljuce
+	-tabele, ki predstavljajo objektne tipe (Vsaj 1 izmed stolpcev, ki sestavljajo PK se nahaja v tabeli)
+	-"Vmesne tabele",ki vsebujejo vsaj 2 tuja kljuca in tako med seboj povezujejo vec objektnih tipov
+	-stolpce vsake od "vmesnih tabel", ki so primerni za gradnjo relacijskih matrik
+
+    2.Na uporabnikovo zeljo stisni "slepe veje":
+        Poisci vse tabele, brez tujih kljucev:
+            poisci tabele, ki se povezujejo na take tabele preko enega in edinega tujega kljuca
+                ce je takih tabel
+
+    3.Na uporabnikovo zeljo vzorci tabelo.
+        Pomikaj se po "vmesnih tabelah":
+            nakljucno in brez vracanja izbiraj vrstice iz "vmesne tabele":
+                v vzorec vsake izmed tabel, ki jih "vmesna tabela" referencira dodaj objekt, ki ga izbrana vrstica referencira.
+                postopek ponavljaj dokler vsota stevil objektov v vzorcih za kateri koli par objektnih tipov ne doseze ali preseze praga, ki ga doloci uporabnik
+
+    4.Zgradi relacijske matrike.
+        Za vsako tabelo T , ki vsebuje tuje kljuce:
+            ce tabela vsebuje vsaj 1 tuji kljuc:
+                za vsak tuji kljuc F1:
+                    Zgradi indikatorsko matriko (kjer 1 indicira, da sta objekta povezana, 0 pa da nista)
+            ce tabela vsebuje vsaj 2 tuja kljuca:
+                za vsak par tujih kljucev F1, F2:
+                    za vsak stolpec iz tabele T, primeren za gradnjo relacijskih matrik:
+                        Zgradi relacijsko matriko
+            OPTIMIZACIJA: za vsako relacijo izberi zgolj nekaj najgostejsih alternativnih relacijskih matrik. Stevilo doloci uporabnik
+
+    5.Gradnja grafov, zlivanje in ocena rekonstrukcije:
+        Zgradi graf za vsako kombinacijo alternativnih relacijskih matrik, ki so na voljo za vsako od relacij med objektnimi tipi:
+            vsak graf zlij z uporabo matricne faktorizacije
+            Za vsako relacijo:
+                izracunaj RMSE razdaljo med relacijsko matriko pred zlitjem in po njem.
+        Za vsako relacijo:
+            izracunaj povprecni RMSE za vse grafe
+        Kot koncni rezultat vrni seznam relacij rangiran po povprecnem RMSE
     '''
 
     def connect_to_postgreSQL(self,host,database,user,password):
@@ -112,10 +139,17 @@ class Fuse():
         :param database:
         :return:
         '''
+        checkpoint_file_path = ".checkpoint_" + host + "_" + database + ".txt"
+        checkpoint_file_exists=os.path.isfile(checkpoint_file_path)
+
         print("***Nalagam shranjene podatke iz datoteke...")
-        checkpoint_file_path=".checkpoint_"+host+"_"+database+".txt"
+
         self.checkpoint_file=open(checkpoint_file_path,'a+')
         self.checkpoint_file.seek(0,0)
+
+        if not checkpoint_file_exists:
+            print("***Datoteka s shranjenimi podatki ne obstaja!")
+            return
 
         foreign_key_section=False
         primary_key_section = False
@@ -569,11 +603,11 @@ class Fuse():
                 sql_query = sql_query[:-len(" OR ")]
 
             table=t
-            #print("TABLE",table)
+            print("%%%%%%%%TABLE",table)
             table_connected_to_table=t
             while True:
                 table_connected_to_table=[x[3] for x in self.foreign_keys if x[1]==table_connected_to_table]
-                #print("Table connected to table",table_connected_to_table)
+                print("%%%%%%%%Table connected to table",table_connected_to_table)
                 if len(table_connected_to_table)==0:
                     break
                 else:
@@ -662,8 +696,6 @@ class Fuse():
         :return:list of relational matrices.
         Only 1 matrix if binarization of attribute(column_id) is not required.
         '''
-
-        #TEST!!!!!!!!!!!!!!  quick-and-dirty fix?
         """
         if ' ' in column_id:
             column_id=column_id[column_id.index(' '):]
@@ -675,7 +707,7 @@ class Fuse():
             if '_' in column_id:
                 column_id=column_id[column_id.index('_')+1:]'''
 
-
+        # table=fk_link1[1]
         table1=fk_link1[2]
         table2=fk_link2[2]
 
@@ -757,7 +789,7 @@ class Fuse():
         #print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         #self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         rows=self.cursor.fetchall()
-        #print("ROWS BEFORE", rows)
+        print("ROWS BEFORE", rows)
         rows = np.array(rows)
 
 
@@ -766,19 +798,24 @@ class Fuse():
             if len(set(rows[:,-1]))>self.dummy_variable_treshold:
                 print("\t\t\t\t\t\t\tStolpec "+table+"."+column_id+" ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.")
                 return []
-            labelencoder=LabelEncoder()
-            rows[:,-1]=labelencoder.fit_transform(rows[:,-1])
-            nr_columns=len(labelencoder.classes_)
-            onehotencoder = OneHotEncoder(categorical_features=[-1])
-            dummy_variables=onehotencoder.fit_transform(rows[:,-1].reshape(-1, 1)).toarray()
-            rows=np.delete(rows,-1,1)
-            rows=np.append(rows,dummy_variables,1)
-            #dummy variable trap?
-            #move dummy variables from begining to end of table!
+            if None in rows[:,-1]:
+                print("\t\t\t\t\t\t\tStolpec vsebuje vrednost 'None' --> nadaljujem brez razbitja na mnozico indikatorskih spremenljivk")
+            else:
+                labelencoder=LabelEncoder()
+                print("ROWS to TRANSFORM by LABELENCODER",rows[:,-1])
+                rows[:,-1]=labelencoder.fit_transform(rows[:,-1])
+                nr_columns=len(labelencoder.classes_)
+                onehotencoder = OneHotEncoder(categorical_features=[-1])
+                dummy_variables=onehotencoder.fit_transform(rows[:,-1].reshape(-1, 1)).toarray()
+                rows=np.delete(rows,-1,1)
+                rows=np.append(rows,dummy_variables,1)
+                #dummy variable trap?
+                #move dummy variables from begining to end of table!
         #print("ROWS AFT",rows)
 
         for i in range(nr_columns):
             #R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
+            print("\t\t\t\t\t\t\tPoskusam ustvariti prazno matriko velikosti: ",len(objects_table1[1])," X ", len(objects_table2[1]))
             R = np.empty((len(objects_table1[1]), len(objects_table2[1])))
             R.fill(np.nan)
             matrices.append(R)
@@ -839,6 +876,7 @@ class Fuse():
 
                 #Zacasni popravek specificno za testno podatkovno bazo avtomobilizem2 ... hrosc?
                 #Samo kadar vzorcim podatke..
+                '''
                 if self.presampling_mode:
                     if '5m5500' in c1[0] or '1m1100' in c1[0] or '3m3300' in c1[0]:
                         print("FIXXXXXXXXXXXXX")
@@ -847,6 +885,7 @@ class Fuse():
                     if '5m5500' in c2[0] or '1m1100' in c2[0] or '3m3300' in c2[0]:
                         print("FIXXXXXXXXXXXXX")
                         c2=tuple([c2[x][:6] if x==0 else c2[x] for x in range(len(c2))])
+                '''
 
                 #print("OBJECTS 1",objects_table1)
                 #print("TYPE 1",self.column_data_type[table1])
@@ -884,53 +923,91 @@ class Fuse():
         rows=list(set(self.cursor.fetchall()))
         return [pk_columns,rows]
 
-    def gen_indicator_matrix_for_relation(self,table1,fk_link):
+
+    def gen_indicator_matrix_for_relation(self,fk_link):
         '''
-        For two tables related via Foreign Key constraint create matrix of dimensions |objects in table1| x |objects in table2|,
-        that has 1 in every cell for actually related objects and 0 elsewhere.
         :param table1:
         :param table2:
-        :return:
+        :param table:
+        :param column_id:
+        :return:list of relational matrices.
+        Only 1 matrix if binarization of attribute(column_id) is not required.
         '''
-        print("TABELE, KI SO V VZORCU:",self.sample_tables)
+        #table=fk_link1[1]
+        table1 = fk_link[1]
         table2 = fk_link[2]
-        objects_table1=self.get_object_ids(table1)
-        objects_table2=self.get_object_ids(table2)
-        #print("OBJECTS TABLE 1 ",objects_table1)
-        #print("OBJECTS TABLE 2 ",objects_table2)
-        table_relations=[x for x in self.foreign_keys if x[1]==table1 and x[3]==table2 and x[0]==fk_link[0]]
+
+        #print("GENERATE RELATION MATRIX",table1,table2,table+'->'+column_id)
+        matrices=[]
+        #print("\tGeneriranje matrik za stolpec vmesne matrike..")
+        if self.presampling_mode:
+            objects_table1=self.sample[table1]
+            objects_table2=self.sample[table2]
+        else:
+            objects_table1 = self.get_object_ids(table1)
+            objects_table2 = self.get_object_ids(table2)
+        # print("OBJECTS TABLE 1 ",objects_table1)
+        # print("OBJECTS TABLE 2 ",objects_table2)
+        table1_table2_fk = [x for x in self.foreign_keys if x[1] == table1 and x[3] == table2 and x[0]==fk_link[0]]
 
         if len(objects_table1[1]) == 0 or len(objects_table2[1]) == 0:
             return []
-        #R = np.zeros((len(objects_table1[1]), len(objects_table2[1])))
+
         R = np.empty((len(objects_table1[1]), len(objects_table2[1])))
         R.fill(np.nan)
-        #fill in 1s
-        header_fk_tmp=[]
-        for x in objects_table2[0]:
-            for y in table_relations:
-                if y[3]==table2 and y[4]==x:
-                    header_fk_tmp.append(y[2])
-        if table1==table2:
-            #PROBLEM PRI SESTAVLJENIH PRIMARNIH KLJUCEV ZARADI povezovanja vsakega od FK stoplcev na VSAKEGA od PK stolpcev??
-            self.cursor.execute("SELECT "+",".join(["a."+x for x in objects_table1[0]])+','+",".join("b."+x for x in objects_table2[0])+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+" AND ".join(["a."+x[2]+" = "+"b."+x[4] for x in table_relations])+";")
-            #self.cursor.execute("SELECT "+",".join(["a."+x for x in objects_table1[0]])+','+",".join("b."+x for x in objects_table2[0])+" FROM "+table1+"as a NATURAL JOIN "+table2+" as b;")
+        #CE JE MED DVEMA TABELAMA VEC FK POVEZAV KATERO IZBRATI ZA ZDRUZITEV TABEL?? --> TRETIRAJ LOCENO!! namesto po povezanih tabelah se sprehajaj po kombinacijah tujih kljucev
+        #sql_query="SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk if x[0]==y]) for y in table_table1_fk_names])+" INNER JOIN "+table2+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk if x[0]==y]) for y in table_table2_fk_names])+';'
+        '''print("TAAABLEEE",table)
+        print("COLUMN ID",column_id)'''
+        if self.presampling_mode:
+            sql_query="SELECT "+', '.join('a.'+x for x in objects_table1[0])+', '+', '.join('b.'+x[4] for x in table1_table2_fk)+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+' AND '.join(['a.'+x[2]+' = '+'b.'+x[4] for x in table1_table2_fk ])
+            sql_query+=' WHERE ( '
+            for y in self.sample[table2][1]:
+                sql_query+=' ( '
+                for x in range(len(self.sample[table2][0])):
+                    sql_query += "b." + str(self.sample[table2][0][x]) + " = '" + str(y[x]) + "' AND "
+                sql_query = sql_query[:-len(" AND ")]
+                sql_query += ') '
+                sql_query+=' OR '
+            sql_query = sql_query[:-len(" OR ")]
+            sql_query += " ) AND ( "
+            for y in self.sample[table1][1]:
+                sql_query += ' ( '
+                for x in range(len(self.sample[table1][0])):
+                    sql_query += "a." + str(self.sample[table1][0][x]) + " = '" + str(y[x]) + "' AND "
+                sql_query = sql_query[:-len(" AND ")]
+                sql_query += ') '
+                sql_query += ' OR '
+            sql_query = sql_query[:-len(" OR ")]
+            sql_query += ');'
+
+            #sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+' WHERE ('+'OR '.join([' OR '.join([self.sample[table1][0][x]+" = "+y[x] for x in range(len(self.sample[table1][0]))]) for y in self.sample[table1][1]])+") AND ("+'OR '.join([' OR '.join([self.sample[table2][0][x]+" = "+y[x] for x in range(len(self.sample[table2[0]]))]) for y in self.sample[table2][1]])
+            #sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+' WHERE ('+'OR '.join([' OR '.join([y[0][x]+" = "+list(y[1])[x] for x in range(len(y[0]))]) for y in self.sample[table1]])+") AND ("+'OR '.join([' OR '.join([y[0][x]+" = "+list(y[1])[x] for x in range(len(y[0]))]) for y in self.sample[table2]])
+
         else:
-            #print("SELECT "+",".join([table1+"."+x for x in objects_table1[0]])+','+",".join(table2+"."+x for x in objects_table2[0])+" FROM "+table1+" INNER JOIN "+table2+" ON "+" AND ".join([x[1]+"."+x[2]+" = "+x[3]+"."+x[4] for x in table_relations])+";")
-            self.cursor.execute("SELECT "+",".join([table1+"."+x for x in objects_table1[0]])+','+",".join(table2+"."+x for x in objects_table2[0])+" FROM "+table1+" INNER JOIN "+table2+" ON "+" AND ".join([x[1]+"."+x[2]+" = "+x[3]+"."+x[4] for x in table_relations])+";")
-        lines=self.cursor.fetchall()
-        for line in lines:
+            sql_query="SELECT "+', '.join('a.'+x for x in objects_table1[0])+', '+', '.join('b.'+x[4] for x in table1_table2_fk)+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+' AND '.join(['a.'+x[2]+' = '+'b.'+x[4] for x in table1_table2_fk ])+';'
+        print(sql_query)
+        self.cursor.execute(sql_query)
+        #print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
+        #self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
+        rows=self.cursor.fetchall()
+        #print("ROWS BEFORE", rows)
+        #rows = np.array(rows)
+
+
+
+        for line in rows:
             #print("LINE ",line)
             object1_id=tuple(line[0:len(objects_table1[0])])
-            '''print("O1ID: ",object1_id)
-            print("OBJECTS TABLE 1",objects_table1)'''
+            print("O1ID: ",object1_id)
+            print("OBJECTS TABLE 1",objects_table1)
             object2_id=tuple(line[len(objects_table1[0]):])
-            '''print("O2ID: ",object2_id)
-            print("OBJECTS TABLE 2",objects_table2)'''
+            print("O2ID: ",object2_id)
+            print("OBJECTS TABLE 2",objects_table2)
             if len(object1_id)==0 or len(object2_id)==0 or None in object1_id or None in object2_id:
                 continue
-            object1_indx=objects_table1[1].index(object1_id)
-            object2_indx=objects_table2[1].index(object2_id)
+            object1_indx=list(objects_table1[1]).index(object1_id)
+            object2_indx=list(objects_table2[1]).index(object2_id)
             R[object1_indx,object2_indx]=1
 
         return [R]
@@ -1037,7 +1114,7 @@ class Fuse():
                     print("TIK PRED KATASTROFO")
                     print("TTTTTT",t)
                     print("TTT1111",t1)
-                    matrices=self.gen_indicator_matrix_for_relation(t,t1)
+                    matrices=self.gen_indicator_matrix_for_relation(t1)
                     if t==t1[2]:
                         if not t in constraint_matrices:
                             constraint_matrices[t] = []
@@ -1459,10 +1536,10 @@ class Fuse():
             print("MODIFIED TABLES SQL:",self.modified_tables)
             #self.get_column_data_types_tables_gte2_fk()
             self.filter_columns_fusion()
-            if self.presampling_mode:
-                self.presample()
             if self.join_outmost_tables_mode:
                 self.join_outmost_tables()
+            if self.presampling_mode:
+                self.presample()
             #print("tabele gte2 fk: ", self.tables_gte2_fk)
             #print("vrste stolpcev v tabelah gte2 fk: ",self.column_data_type)
             #print("columns fusion: ",self.column_fusion)
@@ -1478,5 +1555,6 @@ class Fuse():
 
 
 if __name__ == "__main__":
-    fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
-    #fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True)
+    #fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
+    fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=False, object_nr_limit=20, presampling_mode=True)
+
