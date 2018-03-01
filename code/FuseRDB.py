@@ -789,7 +789,7 @@ class Fuse():
         #print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         #self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         rows=self.cursor.fetchall()
-        print("ROWS BEFORE", rows)
+        #print("ROWS BEFORE", rows)
         rows = np.array(rows)
 
 
@@ -800,6 +800,7 @@ class Fuse():
                 return []
             if None in rows[:,-1]:
                 print("\t\t\t\t\t\t\tStolpec vsebuje vrednost 'None' --> nadaljujem brez razbitja na mnozico indikatorskih spremenljivk")
+                return []
             else:
                 labelencoder=LabelEncoder()
                 print("ROWS to TRANSFORM by LABELENCODER",rows[:,-1])
@@ -887,15 +888,7 @@ class Fuse():
                         c2=tuple([c2[x][:6] if x==0 else c2[x] for x in range(len(c2))])
                 '''
 
-                #print("OBJECTS 1",objects_table1)
-                #print("TYPE 1",self.column_data_type[table1])
-                #print("OBJECTS 2",objects_table2)
-                #print("TYPE 2",self.column_data_type[table2])
-                #print("C1",c1)
-                #print("C2",c2)
-                #print("C1 TYPES",str(type(c1[0])))
-                #print("C2 TYPES",str(type(c2[0])))
-
+                #print("C1 type",type(c1),"C2 type",type(c2),"i type",type(i),"v type",v)
                 matrices[i][list(objects_table1[1]).index(c1)][list(objects_table2[1]).index(c2)]=v[i]
         return matrices
 
@@ -960,17 +953,9 @@ class Fuse():
         '''print("TAAABLEEE",table)
         print("COLUMN ID",column_id)'''
         if self.presampling_mode:
-            sql_query="SELECT "+', '.join('a.'+x for x in objects_table1[0])+', '+', '.join('b.'+x[4] for x in table1_table2_fk)+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+' AND '.join(['a.'+x[2]+' = '+'b.'+x[4] for x in table1_table2_fk ])
+            #sql_query="SELECT "+', '.join('a.'+x for x in objects_table1[0])+', '+', '.join('b.'+x[4] for x in table1_table2_fk)+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+' AND '.join(['a.'+x[2]+' = '+'b.'+x[4] for x in table1_table2_fk ])
+            sql_query="SELECT "+', '.join('a.'+x for x in objects_table1[0])+', '+', '.join('b.'+x for x in objects_table2[0])+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+' AND '.join(['a.'+x[2]+' = '+'b.'+x[4] for x in table1_table2_fk ])
             sql_query+=' WHERE ( '
-            for y in self.sample[table2][1]:
-                sql_query+=' ( '
-                for x in range(len(self.sample[table2][0])):
-                    sql_query += "b." + str(self.sample[table2][0][x]) + " = '" + str(y[x]) + "' AND "
-                sql_query = sql_query[:-len(" AND ")]
-                sql_query += ') '
-                sql_query+=' OR '
-            sql_query = sql_query[:-len(" OR ")]
-            sql_query += " ) AND ( "
             for y in self.sample[table1][1]:
                 sql_query += ' ( '
                 for x in range(len(self.sample[table1][0])):
@@ -979,14 +964,25 @@ class Fuse():
                 sql_query += ') '
                 sql_query += ' OR '
             sql_query = sql_query[:-len(" OR ")]
+            sql_query += " ) AND ( "
+            for y in self.sample[table2][1]:
+                sql_query+=' ( '
+                for x in range(len(self.sample[table2][0])):
+                    sql_query += "b." + str(self.sample[table2][0][x]) + " = '" + str(y[x]) + "' AND "
+                sql_query = sql_query[:-len(" AND ")]
+                sql_query += ') '
+                sql_query+=' OR '
+            sql_query = sql_query[:-len(" OR ")]
             sql_query += ');'
 
             #sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+' WHERE ('+'OR '.join([' OR '.join([self.sample[table1][0][x]+" = "+y[x] for x in range(len(self.sample[table1][0]))]) for y in self.sample[table1][1]])+") AND ("+'OR '.join([' OR '.join([self.sample[table2][0][x]+" = "+y[x] for x in range(len(self.sample[table2[0]]))]) for y in self.sample[table2][1]])
             #sql_query="SELECT "+', '.join('a.'+x[4] for x in table_table1_fk)+', '+', '.join('b.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table+" INNER JOIN "+table1+" as a ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'a.'+x[4] for x in table_table1_fk ])+" INNER JOIN "+table2+" as b ON "+' AND '.join([x[1]+'.'+x[2]+' = '+'b.'+x[4] for x in table_table2_fk])+' WHERE ('+'OR '.join([' OR '.join([y[0][x]+" = "+list(y[1])[x] for x in range(len(y[0]))]) for y in self.sample[table1]])+") AND ("+'OR '.join([' OR '.join([y[0][x]+" = "+list(y[1])[x] for x in range(len(y[0]))]) for y in self.sample[table2]])
 
         else:
-            sql_query="SELECT "+', '.join('a.'+x for x in objects_table1[0])+', '+', '.join('b.'+x[4] for x in table1_table2_fk)+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+' AND '.join(['a.'+x[2]+' = '+'b.'+x[4] for x in table1_table2_fk ])+';'
-        print(sql_query)
+            #sql_query="SELECT "+', '.join('a.'+x for x in objects_table1[0])+', '+', '.join('b.'+x[4] for x in table1_table2_fk)+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+' AND '.join(['a.'+x[2]+' = '+'b.'+x[4] for x in table1_table2_fk ])+';'
+            sql_query="SELECT "+', '.join('a.'+x for x in objects_table1[0])+', '+', '.join('b.'+x for x in objects_table2[0])+" FROM "+table1+" as a INNER JOIN "+table2+" as b ON "+' AND '.join(['a.'+x[2]+' = '+'b.'+x[4] for x in table1_table2_fk ])+';'
+
+        #print(sql_query)
         self.cursor.execute(sql_query)
         #print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         #self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
@@ -1111,9 +1107,11 @@ class Fuse():
                             '''print("T1", t1)
                             print("SAMPLE", self.sample_tables)'''
                             continue
+                    '''        
                     print("TIK PRED KATASTROFO")
                     print("TTTTTT",t)
                     print("TTT1111",t1)
+                    '''
                     matrices=self.gen_indicator_matrix_for_relation(t1)
                     if t==t1[2]:
                         if not t in constraint_matrices:
@@ -1555,6 +1553,6 @@ class Fuse():
 
 
 if __name__ == "__main__":
-    #fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
-    fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=False, object_nr_limit=20, presampling_mode=True)
+    fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
+    #fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=False, object_nr_limit=20, presampling_mode=True)
 
