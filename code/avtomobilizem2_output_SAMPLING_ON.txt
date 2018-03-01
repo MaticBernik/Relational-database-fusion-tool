@@ -1,0 +1,313 @@
+***Initcializacija..
+***Ocenjujem primerno omejitev dimenzij relacijskih matrik
+	# svmem(total=16713519104, available=11448209408, percent=31.5, used=9256890368, free=7456628736, active=6291980288, inactive=2410377216, buffers=391856128, cached=3599724544)
+***Povezovanje na podatkovno bazo...
+***Pridobivanje podatkov o podatkovnih tipih stolpcev...
+***Nalagam shranjene podatke iz datoteke...
+***Datoteka s shranjenimi podatki ne obstaja!
+***Zbiranje vseh omejitev tipov 'tuji kljuc' in 'primarni kljuc'...
+***Iskanje tabel, z najmanj 2 tujima kljucema...
+MODIFIED TABLES SQL: None
+***Izbor stolpcev primernih za zlivanje..
+***pridruzevanje zunanjih tabel...
+###EXCLUDED TABLES: {'jezikovna_skupina', 'jezik'}
+###TABLES TO MODIFY {'drzava'}
+%%%%%%%%TABLE drzava
+%%%%%%%%Table connected to table ['jezik']
+%%%%%%%%Table connected to table ['jezikovna_skupina']
+%%%%%%%%Table connected to table []
+drzava
+***Vzorcenje relacij...
+	 ( 1 / 2 ) Vzorcim relacije preko tabele: avtomobil
+	 ( 2 / 2 ) Vzorcim relacije preko tabele: lastnistvo
+!!!!!!SAMPLE: {'stranka': [['emso'], {('3m3300',), ('1m1100',), ('5m5500',)}], 'drzava': [['ime', 'kontinent'], {('USA', 'Amerika'), ('Nemcija', 'Evropa'), ('Slovenija', 'Evropa')}], 'model': [['ime', 'znamka'], {('MONDEO', 'FORD'), ('GOLF', 'VW'), ('3', 'AUDI'), ('FIESTA', 'FORD')}], 'lastnistvo': [['id'], {(1,), (2,), (3,), (4,), (5,), (6,)}], 'avtomobil': [['registrska'], {('LJ-555-55',), ('LJ-222-22',), ('LJ-111-11',), ('LJ-333-33',), ('LJ-368-43',), ('LJ-444-44',)}]}
+!!!!!!SAMPLE TABLES {'drzava', 'lastnistvo', 'stranka', 'model', 'avtomobil'}
+***Gradnja relacijskih in omejitvenih matrik..
+	 ( 1 / 6 )	Gradim relacijske matrike za tabelo:  model
+			( 1 / 1 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('model_znamka_fkey', 'model', 'znamka')
+	TABELE NI V VZORCU!! znamka
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 2 / 6 )	Gradim relacijske matrike za tabelo:  drzava
+			( 1 / 1 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('drzava_uradni_jezik_fkey', 'drzava', 'jezik')
+	TABELE NI V VZORCU!! jezik
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 3 / 6 )	Gradim relacijske matrike za tabelo:  avtomobil
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('avtomobil_drzava_registracije_fkey', 'avtomobil', 'drzava') in ('avtomobil_drzava_proizvodnje_fkey', 'avtomobil', 'drzava')
+					( 1 / 9 )	Gradim relacijske matrike stolpec: avtomobil znamka
+							Stolpec avtomobil.znamka ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 2 / 9 )	Gradim relacijske matrike stolpec: avtomobil model
+							Stolpec avtomobil.model ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 3 / 9 )	Gradim relacijske matrike stolpec: avtomobil drzava_proizvodnje
+							Stolpec avtomobil.drzava_proizvodnje ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 4 / 9 )	Gradim relacijske matrike stolpec: avtomobil kontinent_registracije
+							Stolpec avtomobil.kontinent_registracije ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 5 / 9 )	Gradim relacijske matrike stolpec: avtomobil letnik
+							Poskusam ustvariti prazno matriko velikosti:  3  X  3
+					( 6 / 9 )	Gradim relacijske matrike stolpec: avtomobil konjske_moci
+							Poskusam ustvariti prazno matriko velikosti:  3  X  3
+					( 7 / 9 )	Gradim relacijske matrike stolpec: avtomobil drzava_registracije
+							Stolpec avtomobil.drzava_registracije ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 8 / 9 )	Gradim relacijske matrike stolpec: avtomobil kontinent_proizvodnje
+							Stolpec avtomobil.kontinent_proizvodnje ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 9 / 9 )	Gradim relacijske matrike stolpec: avtomobil barva
+							Stolpec avtomobil.barva ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('avtomobil_drzava_registracije_fkey', 'avtomobil', 'drzava') in ('avtomobil_znamka_fkey', 'avtomobil', 'model')
+					( 1 / 9 )	Gradim relacijske matrike stolpec: avtomobil znamka
+							Stolpec avtomobil.znamka ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 2 / 9 )	Gradim relacijske matrike stolpec: avtomobil model
+							Stolpec avtomobil.model ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 3 / 9 )	Gradim relacijske matrike stolpec: avtomobil drzava_proizvodnje
+							Stolpec avtomobil.drzava_proizvodnje ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 4 / 9 )	Gradim relacijske matrike stolpec: avtomobil kontinent_registracije
+							Stolpec avtomobil.kontinent_registracije ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 5 / 9 )	Gradim relacijske matrike stolpec: avtomobil letnik
+							Poskusam ustvariti prazno matriko velikosti:  3  X  4
+					( 6 / 9 )	Gradim relacijske matrike stolpec: avtomobil konjske_moci
+							Poskusam ustvariti prazno matriko velikosti:  3  X  4
+					( 7 / 9 )	Gradim relacijske matrike stolpec: avtomobil drzava_registracije
+							Stolpec avtomobil.drzava_registracije ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 8 / 9 )	Gradim relacijske matrike stolpec: avtomobil kontinent_proizvodnje
+							Stolpec avtomobil.kontinent_proizvodnje ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 9 / 9 )	Gradim relacijske matrike stolpec: avtomobil barva
+							Stolpec avtomobil.barva ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('avtomobil_drzava_proizvodnje_fkey', 'avtomobil', 'drzava') in ('avtomobil_znamka_fkey', 'avtomobil', 'model')
+					( 1 / 9 )	Gradim relacijske matrike stolpec: avtomobil znamka
+							Stolpec avtomobil.znamka ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 2 / 9 )	Gradim relacijske matrike stolpec: avtomobil model
+							Stolpec avtomobil.model ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 3 / 9 )	Gradim relacijske matrike stolpec: avtomobil drzava_proizvodnje
+							Stolpec avtomobil.drzava_proizvodnje ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 4 / 9 )	Gradim relacijske matrike stolpec: avtomobil kontinent_registracije
+							Stolpec avtomobil.kontinent_registracije ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 5 / 9 )	Gradim relacijske matrike stolpec: avtomobil letnik
+							Poskusam ustvariti prazno matriko velikosti:  3  X  4
+					( 6 / 9 )	Gradim relacijske matrike stolpec: avtomobil konjske_moci
+							Poskusam ustvariti prazno matriko velikosti:  3  X  4
+					( 7 / 9 )	Gradim relacijske matrike stolpec: avtomobil drzava_registracije
+							Stolpec avtomobil.drzava_registracije ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 8 / 9 )	Gradim relacijske matrike stolpec: avtomobil kontinent_proizvodnje
+							Stolpec avtomobil.kontinent_proizvodnje ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+					( 9 / 9 )	Gradim relacijske matrike stolpec: avtomobil barva
+							Stolpec avtomobil.barva ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+			( 1 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('avtomobil_drzava_registracije_fkey', 'avtomobil', 'drzava')
+			( 2 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('avtomobil_drzava_proizvodnje_fkey', 'avtomobil', 'drzava')
+			( 3 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('avtomobil_znamka_fkey', 'avtomobil', 'model')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 4 / 6 )	Gradim relacijske matrike za tabelo:  lastnistvo
+			( 1 / 1 )	Gradim relacijske matrike za povezavi: ('lastnistvo_avtomobil_fkey', 'lastnistvo', 'avtomobil') in ('lastnistvo_stranka_fkey', 'lastnistvo', 'stranka')
+					( 1 / 2 )	Gradim relacijske matrike stolpec: lastnistvo id
+							Poskusam ustvariti prazno matriko velikosti:  6  X  3
+					( 2 / 2 )	Gradim relacijske matrike stolpec: lastnistvo stranka
+							Stolpec lastnistvo.stranka ima prevec razlicnih vrednosti za razbitje na mnozico indikatorskih spremenljivk.
+			( 1 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('lastnistvo_avtomobil_fkey', 'lastnistvo', 'avtomobil')
+			( 2 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('lastnistvo_stranka_fkey', 'lastnistvo', 'stranka')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 5 / 6 )	Gradim relacijske matrike za tabelo:  znamka
+			TABELE NI V VZORCU!!
+	 ( 6 / 6 )	Gradim relacijske matrike za tabelo:  jezik
+			TABELE NI V VZORCU!!
+***Zlivanje podatkov..
+***Generiram graf za zlivanje..
+	#Pripravljam grafe za zlivanje..
+			 ( 1 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 3.339166966513541e-12), ('lastnistvo avtomobil', 0.0052335823222522549), ('avtomobil model', 0.00640943319437741), ('avtomobil drzava', 0.015207700410577993), ('avtomobil stranka', 0.12893115538607799), ('drzava model', 0.17334206346231662)]
+			 ( 2 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 1.0984389376782523e-11), ('lastnistvo avtomobil', 0.0052334966019591837), ('avtomobil drzava', 0.0076427517474481075), ('avtomobil model', 0.0079893075610546552), ('avtomobil stranka', 0.12893209747165688), ('drzava model', 0.20965762383116479)]
+			 ( 3 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 2.3275880947274977e-13), ('lastnistvo avtomobil', 0.0052341360984156969), ('avtomobil drzava', 0.008265500768659487), ('avtomobil model', 0.019412202422339739), ('avtomobil stranka', 0.12893164696253595), ('drzava model', 0.25804908370425955)]
+			 ( 4 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 3.2363952751029724e-11), ('lastnistvo avtomobil', 0.0052331069148521051), ('avtomobil model', 0.0064069489404288025), ('avtomobil drzava', 0.011223575861605412), ('avtomobil stranka', 0.12893237199769322), ('drzava model', 0.13977133609143688)]
+			 ( 5 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo avtomobil', 0.0051475514107432304), ('avtomobil model', 0.0063112733309740451), ('avtomobil drzava', 0.013420007698067626), ('lastnistvo stranka', 0.030363131778138042), ('drzava model', 0.17334919370703505), ('avtomobil stranka', 0.17969221934701557)]
+			 ( 6 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 1.5491319610716784e-12), ('lastnistvo avtomobil', 0.0052334966017057415), ('avtomobil model', 0.0079893075611400868), ('avtomobil drzava', 0.0081240082142867032), ('avtomobil stranka', 0.12893209747091705), ('drzava model', 0.20965762384223582)]
+			 ( 7 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 0.00048536221099606598), ('lastnistvo avtomobil', 0.0052451869218792368), ('avtomobil drzava', 0.0074223771989882547), ('avtomobil model', 0.011636496289416846), ('avtomobil stranka', 0.12900096010809906), ('drzava model', 0.16406764825360809)]
+			 ( 8 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 2.4897500542353383e-10), ('lastnistvo avtomobil', 0.0052339249963823404), ('avtomobil model', 0.0080664424985656905), ('avtomobil drzava', 0.011369282129170061), ('avtomobil stranka', 0.1289317956828552), ('drzava model', 0.20685961950609039)]
+			 ( 9 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 1.6643101027851295e-13), ('drzava model', 0.00027380298141746988), ('lastnistvo avtomobil', 0.0052325167307114284), ('avtomobil model', 0.006408298859506667), ('avtomobil drzava', 0.0073998984308286889), ('avtomobil stranka', 0.12893278776502196)]
+			 ( 10 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 5.4894746646816801e-13), ('lastnistvo avtomobil', 0.0052334966017206427), ('avtomobil drzava', 0.0076427520373592329), ('avtomobil model', 0.0079893075611414781), ('avtomobil stranka', 0.12893209747091572), ('drzava model', 0.20965762384223582)]
+			 ( 11 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 5.4554503358536485e-09), ('lastnistvo avtomobil', 7.4579915820253464e-06), ('avtomobil stranka', 8.3503045851818995e-05), ('avtomobil drzava', 0.001071162376543441), ('avtomobil model', 0.008894807590868083), ('drzava model', 0.1638217964550675)]
+			 ( 12 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 0.00048667102572265289), ('avtomobil model', 0.0070893860860820491), ('lastnistvo avtomobil', 0.0087233266516559358), ('avtomobil drzava', 0.023435324456823527), ('avtomobil stranka', 0.129553284336966), ('drzava model', 0.14461857969020897)]
+			 ( 13 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 3.2099632437475345e-06), ('drzava model', 9.2611489802437214e-05), ('lastnistvo avtomobil', 0.00034929506354297514), ('avtomobil model', 0.00045520937941968749), ('avtomobil drzava', 0.00049396932656574821), ('avtomobil stranka', 0.0065739457584979965)]
+			 ( 14 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 2.4788838544366787e-06), ('lastnistvo avtomobil', 0.0052335203449533872), ('avtomobil model', 0.0079893047577233225), ('avtomobil drzava', 0.0081240381562978341), ('avtomobil stranka', 0.12893219501445446), ('drzava model', 0.20965762381623557)]
+			 ( 15 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 2.6425825395424286e-11), ('lastnistvo avtomobil', 0.0052341359199433437), ('avtomobil drzava', 0.01017307237663243), ('avtomobil model', 0.019411760619946081), ('avtomobil stranka', 0.12893164708893426), ('drzava model', 0.25804952266036407)]
+			 ( 16 / 16 ) Pripravljam graf..
+					 ..zlivam graf..
+					( 1 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava drzava
+							 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+					( 2 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil model
+					( 3 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo stranka
+					( 4 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil drzava
+					( 5 / 7 ) ..ocenjujem rekonstrukcijo relacije:  lastnistvo avtomobil
+					( 6 / 7 ) ..ocenjujem rekonstrukcijo relacije:  avtomobil stranka
+					( 7 / 7 ) ..ocenjujem rekonstrukcijo relacije:  drzava model
+					UREJEN SEZNAM RELACIJ: [('lastnistvo stranka', 3.0660595084921897e-09), ('lastnistvo avtomobil', 0.0052362196105108479), ('avtomobil model', 0.0064063617782489498), ('avtomobil drzava', 0.011542594226579078), ('avtomobil stranka', 0.12893018397237924), ('drzava model', 0.13981447064579194)]
+***Konec zlivanja!!
+					 Preskocil relacijo med dvema enakima objektnima tipoma.. drzava drzava
+***Pripravljam rangiran seznam relacij..
+
+
+
+
+
+RANGIRAN SEZNAM RELACIJ:
+
+    1. lastnistvo stranka	(0.00196)
+
+    2. lastnistvo avtomobil	(0.00482)
+
+    3. avtomobil model	(0.00868)
+
+    4. avtomobil drzava	(0.00953)
+
+    5. avtomobil stranka	(0.11645)
+
+    6. drzava model	(0.16630)
+
+
+
+
+===== Postopek je trajal:	 0:00:59.138968

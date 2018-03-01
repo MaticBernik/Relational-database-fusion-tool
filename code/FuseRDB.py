@@ -877,16 +877,16 @@ class Fuse():
 
                 #Zacasni popravek specificno za testno podatkovno bazo avtomobilizem2 ... hrosc?
                 #Samo kadar vzorcim podatke..
-                '''
+                """
                 if self.presampling_mode:
                     if '5m5500' in c1[0] or '1m1100' in c1[0] or '3m3300' in c1[0]:
-                        print("FIXXXXXXXXXXXXX")
+                        #print("FIXXXXXXXXXXXXX")
                         #c1[0]=c1[0][:6]
                         c1=tuple([c1[x][:6] if x==0 else c1[x] for x in range(len(c1))])
                     if '5m5500' in c2[0] or '1m1100' in c2[0] or '3m3300' in c2[0]:
-                        print("FIXXXXXXXXXXXXX")
+                        #print("FIXXXXXXXXXXXXX")
                         c2=tuple([c2[x][:6] if x==0 else c2[x] for x in range(len(c2))])
-                '''
+                """
 
                 #print("C1 type",type(c1),"C2 type",type(c2),"i type",type(i),"v type",v)
                 matrices[i][list(objects_table1[1]).index(c1)][list(objects_table2[1]).index(c2)]=v[i]
@@ -995,11 +995,24 @@ class Fuse():
         for line in rows:
             #print("LINE ",line)
             object1_id=tuple(line[0:len(objects_table1[0])])
-            print("O1ID: ",object1_id)
-            print("OBJECTS TABLE 1",objects_table1)
+            #print("O1ID: ",object1_id)
+            #print("OBJECTS TABLE 1",objects_table1)
             object2_id=tuple(line[len(objects_table1[0]):])
-            print("O2ID: ",object2_id)
-            print("OBJECTS TABLE 2",objects_table2)
+            #print("O2ID: ",object2_id)
+            #print("OBJECTS TABLE 2",objects_table2)
+
+            """
+            # Zacasni popravek specificno za testno podatkovno bazo avtomobilizem2 ... hrosc?
+            # Samo kadar vzorcim podatke..
+            if self.presampling_mode:
+                if not 'int' in str(type(object1_id[0])) and ('5m5500' in object1_id[0] or '1m1100' in object1_id[0] or '3m3300' in object1_id[0]):
+                    #print("FIXXXXXXXXXXXXX")
+                    # c1[0]=c1[0][:6]
+                    object1_id = tuple([object1_id[x][:6] if x == 0 else object1_id[x] for x in range(len(object1_id))])
+                if not 'int' in str(type(object2_id[0])) and ('5m5500' in object2_id[0] or '1m1100' in object2_id[0] or '3m3300' in object2_id[0]):
+                    #print("FIXXXXXXXXXXXXX")
+                    object2_id = tuple([object2_id[x][:6] if x == 0 else object2_id[x] for x in range(len(object2_id))])
+            """
             if len(object1_id)==0 or len(object2_id)==0 or None in object1_id or None in object2_id:
                 continue
             object1_indx=list(objects_table1[1]).index(object1_id)
@@ -1553,6 +1566,6 @@ class Fuse():
 
 
 if __name__ == "__main__":
-    fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
+    fuse = Fuse(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=True)
     #fuse = Fuse(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=False, object_nr_limit=20, presampling_mode=True)
 
