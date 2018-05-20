@@ -154,10 +154,11 @@ class FuseRDB():
             for filename in os.listdir(relational_matrices_dir):
                 if filename.endswith(".npy"):
                     relation_name = filename[:-len('.npy')]
-                    self.relation_matrices[relation_name] = np.load(relational_matrices_dir + filename)
-                    print(self.relation_matrices[relation_name])
+                    self.relation_matrices[relation_name] = list(np.load(relational_matrices_dir + filename))
+                    #print(self.relation_matrices[relation_name])
                 else:
                     continue
+            self.remove_nan_relations()
 
         self.checkpoint_file=open(checkpoint_file_path,'a+')
         self.checkpoint_file.seek(0,0)
@@ -372,7 +373,8 @@ class FuseRDB():
         scores=[]
         for matrix in matrices_list:
             matrix=np.array(matrix)
-            scores.append(np.count_nonzero(matrix)/(matrix.shape[0]*matrix.shape[1])) #Nonzero ni korektno - 0 je tudi lahko vrednost
+            #scores.append(np.count_nonzero(matrix)/(matrix.shape[0]*matrix.shape[1])) #Nonzero ni korektno - 0 je tudi lahko vrednost
+            scores.append(np.sum(np.isnan(matrix))/(matrix.shape[0]*matrix.shape[1])) #Nonzero ni korektno - 0 je tudi lahko vrednost
         chosen_matrices_indices=np.argsort(scores)[::-1][:self.max_number_of_alternative_relation_matrices_to_use]
         return [matrices_list[i] for i in chosen_matrices_indices]
 
@@ -1073,6 +1075,16 @@ class FuseRDB():
             self.checkpoint_file.write(line+"\n")
         self.checkpoint_file.write("\n")
 
+    def remove_nan_relations(self):
+        if self.relation_matrices is None:
+            return
+        for relation in list(self.relation_matrices):
+            for i in range(len(self.relation_matrices[relation])-1,0-1,-1):
+                if np.all(np.isnan(self.relation_matrices[relation][i])):
+                    del self.relation_matrices[relation][i]
+            if len(self.relation_matrices[relation])==0:
+                del self.relation_matrices[relation]
+
     def build_relation_matricies(self):
         '''
         Build relation and constraint matrices for fusion process.
@@ -1163,6 +1175,7 @@ class FuseRDB():
             self.limit_relation_matrices_number(relation_matrices) #Zaradi porabe pomnilnika ze spotoma filtriraj seznam alternativnih matrik
             gc.collect()
         self.relation_matrices=relation_matrices
+        self.remove_nan_relations()
         #self.constraint_matrices=constraint_matrices
         #print("RELATION MATRICES: ",relation_matrices)
         #print("CONSTRAINT MATRICES: ",constraint_matrices)
@@ -1358,7 +1371,7 @@ class FuseRDB():
 
         # print('OBJEKTNI TIPI: ',self.object_types)
         for type_name in self.object_types:
-            print("Kreiram ObjectType objekt za ",type_name)
+            #print("Kreiram ObjectType objekt za ",type_name)
             self.object_types_fusion[type_name] = fusion.ObjectType(type_name)
 
         fusion_sets=itertools.product(*(self.relation_matrices[relation_name] for relation_name in relational_matrices_keys))
@@ -1379,7 +1392,7 @@ class FuseRDB():
 
             for i in range(len(relational_matrices_keys)):
                 relation_name=relational_matrices_keys[i]
-                print(relation_name)
+                #print(relation_name)
                 related_objects=relation_name.split(' ')
                 relational_matrix=fusion_set[i]
 
@@ -1509,6 +1522,17 @@ class FuseRDB():
         relation_scores_avg_list.sort(key=lambda tup: tup[1])
         return  relation_scores_avg_list
 
+    def graph_is_connected(self):
+        object_type_connected={}
+        for o in self.object_types:
+            object_type_connected[o]=False
+        for k in self.foreign_keys:
+            object_type_connected[k[1]]=True
+            object_type_connected[k[3]]=True
+        for o in object_type_connected:
+            if not object_type_connected[o]:
+                return False
+        return True
 
     def __init__(self,host,database,user,password,presampling_mode=None,join_outmost_tables_mode=False,dummy_var_treshold=20,object_nr_limit=None,alternative_matrices_nr_limit=10, latent_factor=None):
             self.host=host
@@ -1548,9 +1572,9 @@ class FuseRDB():
                 self.presampling_mode=presampling_mode
             self.list_key_constraints()
             self.list_object_types()
-            self.list_connected_tables()
-            self.list_tables_gte2_fk()
             if self.relation_matrices is None:
+                self.list_connected_tables()
+                self.list_tables_gte2_fk()
                 print("MODIFIED TABLES SQL:",self.modified_tables)
                 #self.get_column_data_types_tables_gte2_fk()
                 self.filter_columns_fusion()
@@ -1564,7 +1588,8 @@ class FuseRDB():
                 self.build_relation_matricies()
                 #self.limit_relation_matrices_number()
             self.preprocess_relational_matrices()
-            print(self.relation_matrices)
+            if not self.graph_is_connected():
+                print('GRAPH IS NOT CONNECTED!!',file=sys.stderr)
             relation_scores=self.fuse_data()
             #self.latent_data_models
             self.order_relations_OT(relation_scores)
@@ -1575,6 +1600,6 @@ class FuseRDB():
 
 
 if __name__ == "__main__":
-    fuse = FuseRDB(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
-    #fuse = FuseRDB(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True, object_nr_limit=20, presampling_mode=True)
+    #fuse = FuseRDB(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
+    fuse = FuseRDB(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True, object_nr_limit=20, presampling_mode=True)
 
