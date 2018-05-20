@@ -1166,6 +1166,7 @@ class FuseRDB():
         #self.constraint_matrices=constraint_matrices
         #print("RELATION MATRICES: ",relation_matrices)
         #print("CONSTRAINT MATRICES: ",constraint_matrices)
+        #self.preprocess_relational_matrices()
 
 
         #Write to checkpoint file
@@ -1177,6 +1178,7 @@ class FuseRDB():
         self.checkpoint_file.write("#RELATION MATRICES\n")
         for key in self.relation_matrices:
             np.save(relational_matrices_dir+key,self.relation_matrices[key])
+            #self.relation_matrices[key].dump(relational_matrices_dir + key)
             self.checkpoint_file.write(key+"\n")
             for t in self.relation_matrices[key]:
                 for line in t:
@@ -1509,6 +1511,8 @@ class FuseRDB():
 
 
     def __init__(self,host,database,user,password,presampling_mode=None,join_outmost_tables_mode=False,dummy_var_treshold=20,object_nr_limit=None,alternative_matrices_nr_limit=10, latent_factor=None):
+            self.host=host
+            self.database=database
             cas_zacetka=datetime.now()
             self.postgres_to_python_data_types={'CHARACTER':'str', 'CHAR':'str', 'VARCHAR':'str', 'TEXT':'str', 'SMALLINT':'integer', "INTEGER":'integer', 'INT':'integer', 'SERIAL':'integer', 'FLOAT':'float', 'real':'float', 'float8':'float', 'numeric':'float','DATE':'datetime'}
             print('***Initcializacija..')
@@ -1559,7 +1563,8 @@ class FuseRDB():
                 #print("columns fusion: ",self.column_fusion)
                 self.build_relation_matricies()
                 #self.limit_relation_matrices_number()
-                self.preprocess_relational_matrices()
+            self.preprocess_relational_matrices()
+            print(self.relation_matrices)
             relation_scores=self.fuse_data()
             #self.latent_data_models
             self.order_relations_OT(relation_scores)
@@ -1570,6 +1575,6 @@ class FuseRDB():
 
 
 if __name__ == "__main__":
-    #fuse = FuseRDB(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
-    fuse = FuseRDB(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True, object_nr_limit=20, presampling_mode=True)
+    fuse = FuseRDB(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
+    #fuse = FuseRDB(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True, object_nr_limit=20, presampling_mode=True)
 
