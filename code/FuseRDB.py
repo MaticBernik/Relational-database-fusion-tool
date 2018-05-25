@@ -1534,7 +1534,80 @@ class FuseRDB():
                 return False
         return True
 
-    def __init__(self,host,database,user,password,presampling_mode=None,join_outmost_tables_mode=False,dummy_var_treshold=20,object_nr_limit=None,alternative_matrices_nr_limit=10, latent_factor=None):
+    def choose_connected_subgraph_most_nodes(self):
+        subgraphs=[[x] for x in self.object_types]
+        for relation in self.relation_matrices:
+            ot1=relation.split(' ')[0]
+            ot2=relation.split(' ')[1]
+            ot1_idx=-1
+            ot2_idx=-1
+            for i in range(len(subgraphs)):
+                if ot1 in subgraphs[i]:
+                    ot1_idx=i
+                if ot2 in subgraphs[i]:
+                    ot2_idx=i
+                if ot1_idx!=-1 and ot2_idx!=-1:
+                    break
+            if ot1_idx==ot2_idx:
+                continue
+            subgraphs.append(subgraphs[ot1_idx]+subgraphs[ot2_idx])
+            if ot1_idx>ot2_idx:
+                del subgraphs[ot1_idx]
+            else:
+                del subgraphs[ot2_idx]
+            if ot1_idx>ot2_idx:
+                del subgraphs[ot2_idx]
+            else:
+                del subgraphs[ot1_idx]
+        subgraph_most_nodes=[]
+        for g in subgraphs:
+            if len(g)>len(subgraph_most_nodes):
+                subgraph_most_nodes=g
+        self.object_types=subgraph_most_nodes
+        for relation in self.relation_matrices:
+            ot1 = relation.split(' ')[0]
+            ot2 = relation.split(' ')[1]
+            if not ot1 in self.object_types or not ot2 in self.object_types:
+                del self.relation_matrices[relation]
+
+    def limit_object_types_number(self):
+        node_connections={x:[] for x in self.object_types}
+        for fk in self.foreign_keys:
+            ot1=fk[1]
+            ot2=fk[3]
+            if ot1 not in self.object_types or ot2 not in self.object_types:
+                continue
+            node_connections[ot1].append(ot2)
+            node_connections[ot2].append(ot1)
+        nodes_by_weight=self.object_types
+        nodes_by_weight.sort(key=lambda k:len(node_connections[k]))
+        selected_nodes=[]
+        selected_nodes.append(nodes_by_weight[0])
+        for i in range(1,self.max_number_of_object_types):
+            candidates={}
+            for n in selected_nodes:
+                if n is None:
+                    continue
+                for c in node_connections[n]:
+                    if c in selected_nodes:
+                        continue
+                    if not n in candidates:
+                        candidates[n]=c
+                    else:
+                        if nodes_by_weight.index(c)<nodes_by_weight.indes(candidates[n]):
+                            candidates[n]=c
+            winner=None
+            for n in candidates:
+                if winner is None:
+                    winner=candidates[n]
+                elif nodes_by_weight.index(candidates[n])<nodes_by_weight.index(winner):
+                    winner=candidates[n]
+            selected_nodes.append(winner)
+        print('SELECTED NODES:',selected_nodes)
+        self.object_types=selected_nodes
+
+
+    def __init__(self,host,database,user,password,presampling_mode=None,join_outmost_tables_mode=False,dummy_var_treshold=20,object_nr_limit=None,object_types_nr_limit=None,alternative_matrices_nr_limit=10, latent_factor=None):
             self.host=host
             self.database=database
             cas_zacetka=datetime.now()
@@ -1547,6 +1620,7 @@ class FuseRDB():
                 self.max_number_of_objects=self.estimate_relation_matrix_dimension_constraint()
             else:
                 self.max_number_of_objects=object_nr_limit
+            self.max_number_of_object_types=object_types_nr_limit
             self.max_number_of_alternative_relation_matrices_to_use=alternative_matrices_nr_limit #Omeji stevilo alternativnih relacijskih matrik, ki naj se upostevajo za relacijo med katerima koli objektnima tipoma (ce se preseze se matrike izbere z razlicnimi hevristikami)
 
             self.foreign_keys=None
@@ -1572,6 +1646,8 @@ class FuseRDB():
                 self.presampling_mode=presampling_mode
             self.list_key_constraints()
             self.list_object_types()
+            if not self.max_number_of_object_types is None:
+                self.limit_object_types_number()
             if self.relation_matrices is None:
                 self.list_connected_tables()
                 self.list_tables_gte2_fk()
@@ -1587,9 +1663,10 @@ class FuseRDB():
                 #print("columns fusion: ",self.column_fusion)
                 self.build_relation_matricies()
                 #self.limit_relation_matrices_number()
-            self.preprocess_relational_matrices()
             if not self.graph_is_connected():
-                print('GRAPH IS NOT CONNECTED!!',file=sys.stderr)
+                print('GRAPH IS NOT CONNECTED!! choosing connected subgraph with most nodes instead..',file=sys.stderr)
+                self.choose_connected_subgraph_most_nodes()
+            self.preprocess_relational_matrices()
             relation_scores=self.fuse_data()
             #self.latent_data_models
             self.order_relations_OT(relation_scores)
@@ -1601,5 +1678,5 @@ class FuseRDB():
 
 if __name__ == "__main__":
     #fuse = FuseRDB(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
-    fuse = FuseRDB(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True, object_nr_limit=20, presampling_mode=True)
+    fuse = FuseRDB(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True, object_nr_limit=20,object_types_nr_limit=5, presampling_mode=True)
 
