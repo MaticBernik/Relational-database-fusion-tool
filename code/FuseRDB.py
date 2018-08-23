@@ -127,8 +127,6 @@ class FuseRDB():
         print("\t#",svmem)
         return 10000
 
-    def rmse(self,y_true, y_pred):
-        return np.sqrt(np.sum((y_true - y_pred) ** 2) / y_true.size)
 
     def scale(self,X, amin, amax):
         X_nonnan=X[~np.isnan(X)]
@@ -144,8 +142,7 @@ class FuseRDB():
         :param database:
         :return:
         '''
-        checkpoint_file_path = ".checkpoint_" + host + "_" + database + ".txt"
-        checkpoint_file_exists=os.path.isfile(checkpoint_file_path)
+
 
         print("***Nalagam shranjene podatke iz datoteke...")
         relational_matrices_dir='relational_matrices/'+host + "_" + database+'/'
@@ -160,10 +157,10 @@ class FuseRDB():
                     continue
             self.remove_nan_relations()
 
-        self.checkpoint_file=open(checkpoint_file_path,'a+')
+
         self.checkpoint_file.seek(0,0)
 
-        if not checkpoint_file_exists:
+        if not self.checkpoint_file_exists:
             print("***Datoteka s shranjenimi podatki ne obstaja!")
             return
 
@@ -896,7 +893,7 @@ class FuseRDB():
 
             v=row[-nr_columns:]
             for i in range(nr_columns):
-
+                '''
                 #Zacasni popravek specificno za testno podatkovno bazo avtomobilizem2 ... hrosc?
                 #Samo kadar vzorcim podatke..
                 if self.presampling_mode:
@@ -907,7 +904,7 @@ class FuseRDB():
                     if '5m5500' in c2[0] or '1m1100' in c2[0] or '3m3300' in c2[0]:
                         #print("FIXXXXXXXXXXXXX")
                         c2=tuple([c2[x][:6] if x==0 else c2[x] for x in range(len(c2))])
-
+                '''
                 #print("C1 type",type(c1),"C2 type",type(c2),"i type",type(i),"v type",v)
                 matrices[i][list(objects_table1[1]).index(c1)][list(objects_table2[1]).index(c2)]=v[i]
 
@@ -1025,7 +1022,7 @@ class FuseRDB():
             object2_id=tuple(line[len(objects_table1[0]):])
             #print("O2ID: ",object2_id)
             #print("OBJECTS TABLE 2",objects_table2)
-
+            '''
             # Zacasni popravek specificno za testno podatkovno bazo avtomobilizem2 ... hrosc?
             # Samo kadar vzorcim podatke..
             if self.presampling_mode:
@@ -1036,7 +1033,7 @@ class FuseRDB():
                 if not 'int' in str(type(object2_id[0])) and ('5m5500' in object2_id[0] or '1m1100' in object2_id[0] or '3m3300' in object2_id[0]):
                     #print("FIXXXXXXXXXXXXX")
                     object2_id = tuple([object2_id[x][:6] if x == 0 else object2_id[x] for x in range(len(object2_id))])
-
+            '''
             if len(object1_id)==0 or len(object2_id)==0 or None in object1_id or None in object2_id:
                 continue
             object1_indx=list(objects_table1[1]).index(object1_id)
@@ -1140,15 +1137,29 @@ class FuseRDB():
                         column_count+=1
                         print("\t\t\t\t\t( " + str(column_count) + ' / ' + str(len(columns_matrix_build)) + " )\tGradim relacijske matrike stolpec:", c)
                         c=c[len(t+' '):]
+                        '''
+                        print('\n\nSTOLPEC: ',c)
+                        print('PRIMARNI KLJUCI: ',self.primary_keys)
+                        print('TUJI KLJICI: ',self.foreign_keys,'\n\n')
+                        '''
+                        if (t,c) in [(a,b) for a,b,c in self.primary_keys] or (t,c) in [(b,c) for a,b,c,d,e in self.foreign_keys]:
+                            print('\t\t\t\t\t\t\tStolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.')
+                            continue
                         matrices=self.gen_matrices_for_column(t1,t2,t,c)
                         if not t1[2]+' '+t2[2] in relation_matrices:
                             relation_matrices[t1[2] + ' ' + t2[2]] = []
                         relation_matrices[t1[2]+' '+t2[2]]+=matrices
-            if len(tables_linked_to_t)>=1:
+            if len(tables_linked_to_t)>=1 and t in self.object_types:
                 #Zgradi relacijske matrike za vsako direktno povezavo obravnavane tabele.
                 #for t1 in tables_linked_to_t:
                 table_combo_count=0
+                print('\n\nfk_names_linked_to_t: ',fk_names_linked_to_t,'\n\n')
                 for t1 in fk_names_linked_to_t:
+                    print(t1)
+                    if t1[2] not in self.object_types:
+                        print('CONTINUE')
+                        continue
+                    print('JE OT')
                     table_combo_count+=1
                     print("\t\t\t( "+str(table_combo_count)+' / '+str(len(fk_names_linked_to_t))+" )\tGradim omejitvene oz. indikatorske matrike za povezavo s:",t1)
                     if self.presampling_mode:
@@ -1248,7 +1259,7 @@ class FuseRDB():
         """
         Kaj pa primer, ko je 'vmesna tabela' povezana na drugo 'vmesno tabelo' in bo ta pac pristala v vzorcu?
         """
-        if not self.sample==None:
+        if not self.sample is None:
             return
 
         print("***Vzorcenje relacij...")
@@ -1262,6 +1273,7 @@ class FuseRDB():
             foreign_keys = [x for x in self.foreign_keys if x[1] == t] #tuji kljuci znotraj tabele
             foreign_keys_names=set([x[0] for x in foreign_keys])
             referenced_tables = [x[1] for x in self.table_relations if x[0] == t]
+            referenced_tables=[x for x in referenced_tables if x in self.object_types]
             if self.presampling_mode:
                 self.presampling_mode=False
                 table_ids=self.get_object_ids(t)
@@ -1301,6 +1313,8 @@ class FuseRDB():
                 """
 
                 for referenced_table in referenced_tables:
+                    if referenced_table not in self.object_types:
+                        continue
                     self.sample_tables.add(referenced_table)
                     if self.presampling_mode:
                         self.presampling_mode=False
@@ -1324,7 +1338,8 @@ class FuseRDB():
                             #self.sample[referenced_table]=set(self.sample[referenced_table])
 
                 #sum of selected rows for a pair of referenced tables with largest sample size
-                nr_rows_tables=[len(self.sample[x][1]) for x in referenced_tables]
+                #nr_rows_tables=[len(self.sample[x][1]) for x in referenced_tables if x in self.object_types]
+                nr_rows_tables = [len(self.sample[x][1]) for x in referenced_tables]
                 number_selected_objects=max(nr_rows_tables)
                 nr_rows_tables.remove(number_selected_objects)
                 number_selected_objects*=max(nr_rows_tables)
@@ -1427,7 +1442,7 @@ class FuseRDB():
         plt.rcParams["figure.figsize"]=(15,10)
         plt.show()
 
-    def order_relations_OT(self,ranked_relation_list,list_length=10):
+    def order_relations_OT(self,ranked_relation_list,list_length=30):
         print("***Pripravljam rangiran seznam relacij..")
         #ranked_relation_list = self.rank_object_type_relations()
         print("\n\n\n\n\nRANGIRAN SEZNAM RELACIJ:\n")
@@ -1455,6 +1470,12 @@ class FuseRDB():
         '''object_type1_latent_matrix = graph_after_fusion.factor(object_type1)
         object_type2_latent_matrix = graph_after_fusion.factor(object_type2)
         latent_space_matrix = object_type1_latent_matrix.dot(object_type2_latent_matrix.T)'''
+
+        '''
+        print('\n\nRELATION: ',relation)
+        print('GRAPH AFTER FUSION: ',graph_after_fusion.fusion_graph.relations,'\n\n')
+        '''
+
         latent_space_matrix=graph_after_fusion.complete(relation)
         original_matrix_vector = original_matrix.reshape(1, original_matrix.shape[0] * original_matrix.shape[1])
         latent_space_matrix_vector = latent_space_matrix.reshape(1, latent_space_matrix.shape[0] * latent_space_matrix.shape[1])
@@ -1494,10 +1515,14 @@ class FuseRDB():
             for relation in object_type_relations:
                 relation_object_types_names=relation.split(' ')
                 print("\t\t\t\t\t( "+str(relation_counter)+" / "+str(len(object_type_relations))+" ) ..ocenjujem rekonstrukcijo relacije: ",relation)
+
+                #SPLOH RES ZELIMO IZ OBRAVNAVE IZLOCITI RELACIJE MED OBJEKTI ISTEGA TIPA??
+                #PROBLEM, KER IZ MODELA NE MOREMO DOBITI REKONSTRUKCIJ OMEJITVENIH MATRIK
                 if relation_object_types_names[0]==relation_object_types_names[1]:
                     print("\t\t\t\t\t\t\t Preskocil relacijo med dvema enakima objektnima tipoma..",relation)
                     relation_counter+=1
                     continue
+
                 distance=self.score_relation_reconstruction(relation,graph,fuser)
                 relation_scores[relation]=distance
                 relation_counter+=1
@@ -1570,17 +1595,42 @@ class FuseRDB():
             if not ot1 in self.object_types or not ot2 in self.object_types:
                 del self.relation_matrices[relation]
 
-    def limit_object_types_number(self):
+    def limit_object_types_number(self,debug=True):
+        #1. For each object type form a list of connected object types (directly or max 1 hoop - via inbetween table)
+        #2. Give each node a score equal to number of connections
+        #3. Initialize selected cluster with single node having the highest score
+        #4. While cluster size is lower than object type number limit
+        #   select node with highest score, that is connected to any of already selected nodes and add it to selection.
+        if self.smax_number_of_object_type>len(self.object_types):
+            print('***Stevilo objektnih tipov v podatkih ('+str(len(self.object_types))+') je manjse od omejitve ('+str(self.max_number_of_object_types)+')!')
+            return
         node_connections={x:[] for x in self.object_types}
+        node_connections_indirect={}
         for fk in self.foreign_keys:
             ot1=fk[1]
             ot2=fk[3]
-            if ot1 not in self.object_types or ot2 not in self.object_types:
+            if ot1 not in self.object_types and ot2 not in self.object_types:
                 continue
-            node_connections[ot1].append(ot2)
-            node_connections[ot2].append(ot1)
+            if ot1 in self.object_types and ot2 in self.object_types:
+                node_connections[ot1].append(ot2)
+                node_connections[ot2].append(ot1)
+            elif ot1 in self.object_types:
+                if ot2 not in node_connections_indirect:
+                    node_connections_indirect[ot2]=[]
+                node_connections_indirect[ot2].append(ot1)
+            elif ot2 in self.object_types:
+                if ot1 not in node_connections_indirect:
+                    node_connections_indirect[ot1]=[]
+                node_connections_indirect[ot1].append(ot2)
+        for n in node_connections_indirect:
+            for k in node_connections_indirect[n]:
+                val=node_connections_indirect[n][:]
+                val.remove(k)
+                node_connections[k]+=val
+                node_connections[k]=list(set(node_connections[k]))
+
         nodes_by_weight=self.object_types
-        nodes_by_weight.sort(key=lambda k:len(node_connections[k]))
+        nodes_by_weight.sort(key=lambda k:-len(node_connections[k]))
         selected_nodes=[]
         selected_nodes.append(nodes_by_weight[0])
         for i in range(1,self.max_number_of_object_types):
@@ -1594,7 +1644,7 @@ class FuseRDB():
                     if not n in candidates:
                         candidates[n]=c
                     else:
-                        if nodes_by_weight.index(c)<nodes_by_weight.indes(candidates[n]):
+                        if nodes_by_weight.index(c)<nodes_by_weight.index(candidates[n]):
                             candidates[n]=c
             winner=None
             for n in candidates:
@@ -1603,25 +1653,44 @@ class FuseRDB():
                 elif nodes_by_weight.index(candidates[n])<nodes_by_weight.index(winner):
                     winner=candidates[n]
             selected_nodes.append(winner)
-        print('SELECTED NODES:',selected_nodes)
+
+        if debug:
+            with open('limit_object_types_number.txt','w') as file:
+                file.write('OBJECT TYPE LIMIT NR: '+str(self.max_number_of_object_types))
+                file.write('OBJECT TYPES BEFORE SELECTION:\n\t'+'\n\t'.join(self.object_types)+'\n\n\n')
+                file.write('SELECTED OBJECT TYPES:\n\t'+'\n\t'.join(selected_nodes)+'\n\n\n')
+
         self.object_types=selected_nodes
 
 
-    def __init__(self,host,database,user,password,presampling_mode=None,join_outmost_tables_mode=False,dummy_var_treshold=20,object_nr_limit=None,object_types_nr_limit=None,alternative_matrices_nr_limit=10, latent_factor=None):
+
+    def __init__(self,host,database,user,password,presampling_mode=None,join_outmost_tables_mode=False,dummy_var_treshold=20,object_nr_limit=None,object_types_nr_limit=None,alternative_matrices_nr_limit=10, latent_factor=None, new_session=False):
             self.host=host
             self.database=database
+            self.checkpoint_file_path = ".checkpoint_" + host + "_" + database + ".txt"
+            self.checkpoint_file_exists = os.path.isfile(self.checkpoint_file_path)
+            self.checkpoint_file = open(self.checkpoint_file_path, 'a+')
             cas_zacetka=datetime.now()
             self.postgres_to_python_data_types={'CHARACTER':'str', 'CHAR':'str', 'VARCHAR':'str', 'TEXT':'str', 'SMALLINT':'integer', "INTEGER":'integer', 'INT':'integer', 'SERIAL':'integer', 'FLOAT':'float', 'real':'float', 'float8':'float', 'numeric':'float','DATE':'datetime'}
             print('***Initcializacija..')
             self.latent_factor=latent_factor
             self.join_outmost_tables_mode = join_outmost_tables_mode #Ce True se pred zlivanjem stolpci obrobnih tabel (brez tujih kljucev) prepisejo v tabele, ki jih referencirajo
             self.dummy_variable_treshold=dummy_var_treshold #stevilo razlicnih vrednosti za kategoricne spremenljivke, pri katerih naj se se izvaja delitev na vec indikatorskih spremenljivk
-            if object_nr_limit==None:
+            if object_nr_limit is None:
                 self.max_number_of_objects=self.estimate_relation_matrix_dimension_constraint()
             else:
                 self.max_number_of_objects=object_nr_limit
             self.max_number_of_object_types=object_types_nr_limit
             self.max_number_of_alternative_relation_matrices_to_use=alternative_matrices_nr_limit #Omeji stevilo alternativnih relacijskih matrik, ki naj se upostevajo za relacijo med katerima koli objektnima tipoma (ce se preseze se matrike izbere z razlicnimi hevristikami)
+
+            print('\n\n')
+            print('self.latent_factor: ',self.latent_factor)
+            print('self.join_outmost_tables_mode: ',self.join_outmost_tables_mode)
+            print('self.dummy_variable_treshold: ',self.dummy_variable_treshold)
+            print('self.max_number_of_objects: ',self.max_number_of_objects)
+            print('self.max_number_of_object_types: ',self.max_number_of_object_types)
+            print('self.max_number_of_alternative_relation_matrices_to_use: ',self.max_number_of_alternative_relation_matrices_to_use)
+            print('\n\n')
 
             self.foreign_keys=None
             self.primary_keys=None
@@ -1637,23 +1706,39 @@ class FuseRDB():
             #self.display_database_erm(host,database,user,password)
             self.connect_to_postgreSQL(host,database,user,password)
             self.get_column_data_types()
-            self.restore_from_checkpoint(host,database)
+            if not new_session:
+                self.restore_from_checkpoint(host,database)
             #self.get_column_data_types() #hitreje: pridobi podatkovne tipe samo za stoplpce v vmesnih tabelah
             self.list_tables()
-            if presampling_mode==None:
+            self.list_key_constraints()
+            self.list_object_types()
+            '''
+            if object_types_nr_limit is not None:
+                self.limit_object_types_number()
+            '''
+            if presampling_mode is None:
                 self.presampling_mode=True if self.estimate_complexity()>=3 else False
             else:
                 self.presampling_mode=presampling_mode
-            self.list_key_constraints()
-            self.list_object_types()
-            if not self.max_number_of_object_types is None:
+            if self.max_number_of_object_types is not None:
+                print('***Omejujem stevilo obravnavanih objektnih tipov..')
                 self.limit_object_types_number()
             if self.relation_matrices is None:
                 self.list_connected_tables()
                 self.list_tables_gte2_fk()
+
+                print('\n\n')
+                print('self.object_types: ',self.object_types)
+                print('self.tables_nr_fk: ',self.tables_nr_fk)
+                print('self.tables_gte2_fk: ',self.tables_gte2_fk)
+                print('\n\n')
+
                 print("MODIFIED TABLES SQL:",self.modified_tables)
                 #self.get_column_data_types_tables_gte2_fk()
                 self.filter_columns_fusion()
+
+                print('\n\nself.column_fusion: ',self.column_fusion)
+
                 if self.join_outmost_tables_mode:
                     self.join_outmost_tables()
                 if self.presampling_mode:
@@ -1662,11 +1747,13 @@ class FuseRDB():
                 #print("vrste stolpcev v tabelah gte2 fk: ",self.column_data_type)
                 #print("columns fusion: ",self.column_fusion)
                 self.build_relation_matricies()
+                print("\n\nRELACIJSKE MATRIKE:",self.relation_matrices,'\n\n')
                 #self.limit_relation_matrices_number()
             if not self.graph_is_connected():
                 print('GRAPH IS NOT CONNECTED!! choosing connected subgraph with most nodes instead..',file=sys.stderr)
                 self.choose_connected_subgraph_most_nodes()
             self.preprocess_relational_matrices()
+            #print('RELACIJSKE MATRIKE:',self.relation_matrices)
             relation_scores=self.fuse_data()
             #self.latent_data_models
             self.order_relations_OT(relation_scores)
@@ -1677,6 +1764,8 @@ class FuseRDB():
 
 
 if __name__ == "__main__":
-    #fuse = FuseRDB(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=0, join_outmost_tables_mode=True, presampling_mode=False)
-    fuse = FuseRDB(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True, object_nr_limit=20,object_types_nr_limit=5, presampling_mode=True)
+    #fuse = FuseRDB(host='192.168.217.128', database='avtomobilizem2', user='postgres', password='geslo123',dummy_var_treshold=4, join_outmost_tables_mode=False, presampling_mode=False, object_types_nr_limit=5, new_session=True, alternative_matrices_nr_limit=10)
+    #fuse = FuseRDB(host='192.168.217.128', database='parameciumdb', user='postgres', password='geslo123', join_outmost_tables_mode=True, object_nr_limit=1000,object_types_nr_limit=20, presampling_mode=True,new_session=True)
+    fuse = FuseRDB(host='192.168.217.128', database='pagila', user='postgres', password='geslo123',dummy_var_treshold=2, join_outmost_tables_mode=False, presampling_mode=False, object_types_nr_limit=10, new_session=True, alternative_matrices_nr_limit=3)
+    #fuse = FuseRDB(host='192.168.217.128', database='french_towns', user='postgres', password='geslo123',dummy_var_treshold=2, join_outmost_tables_mode=False, presampling_mode=False, object_types_nr_limit=None, new_session=True, alternative_matrices_nr_limit=10)
 

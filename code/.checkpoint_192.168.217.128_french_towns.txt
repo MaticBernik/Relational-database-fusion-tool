@@ -1,0 +1,94 @@
+#TABLES
+public	regions	postgres	None	True	False	True	False
+public	departments	postgres	None	True	False	True	False
+public	towns	postgres	None	True	False	True	False
+
+#FOREIGN KEYS
+departments_region_fkey	departments	region	regions	code
+towns_department_fkey	towns	department	departments	code
+
+#PRIMARY KEYS
+
+#OBJECT TYPES
+
+#RELATION MATRICES
+
+#TABLES
+public	regions	postgres	None	True	False	True	False
+public	departments	postgres	None	True	False	True	False
+public	towns	postgres	None	True	False	True	False
+
+#FOREIGN KEYS
+towns_department_fkey	towns	department	departments	code
+departments_region_fkey	departments	region	regions	code
+
+#PRIMARY KEYS
+
+#OBJECT TYPES
+
+#RELATION MATRICES
+
+#TABLES
+public	regions	postgres	None	True	False	True	False
+public	departments	postgres	None	True	False	True	False
+public	towns	postgres	None	True	False	True	False
+
+#FOREIGN KEYS
+departments_region_fkey	departments	region	regions	code
+towns_department_fkey	towns	department	departments	code
+
+#PRIMARY KEYS
+
+#OBJECT TYPES
+
+#RELATION MATRICES
+
+#TABLES
+public	regions	postgres	None	True	False	True	False
+public	departments	postgres	None	True	False	True	False
+public	towns	postgres	None	True	False	True	False
+
+#FOREIGN KEYS
+departments_region_fkey	departments	region	regions	code
+towns_department_fkey	towns	department	departments	code
+
+#PRIMARY KEYS
+
+#OBJECT TYPES
+
+#SAMPLE
+
+#RELATION MATRICES
+
+#TABLES
+public	regions	postgres	None	True	False	True	False
+public	departments	postgres	None	True	False	True	False
+public	towns	postgres	None	True	False	True	False
+
+#FOREIGN KEYS
+departments_region_fkey	departments	region	regions	code
+towns_department_fkey	towns	department	departments	code
+
+#PRIMARY KEYS
+
+#OBJECT TYPES
+
+#SAMPLE
+
+#RELATION MATRICES
+
+#TABLES
+public	regions	postgres	None	True	False	True	False
+public	departments	postgres	None	True	False	True	False
+public	towns	postgres	None	True	False	True	False
+
+#FOREIGN KEYS
+towns_department_fkey	towns	department	departments	code
+departments_region_fkey	departments	region	regions	code
+
+#PRIMARY KEYS
+
+#OBJECT TYPES
+
+#RELATION MATRICES
+

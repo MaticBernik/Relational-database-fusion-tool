@@ -1,0 +1,897 @@
+***Initcializacija..
+***Ocenjujem primerno omejitev dimenzij relacijskih matrik
+	# svmem(total=16713224192, available=13493469184, percent=19.3, used=12503289856, free=4209934336, active=8042110976, inactive=3669020672, buffers=642813952, cached=8640720896)
+
+
+
+self.latent_factor:  None
+self.join_outmost_tables_mode:  False
+self.dummy_variable_treshold:  2
+self.max_number_of_objects:  10000
+self.max_number_of_object_types:  None
+self.max_number_of_alternative_relation_matrices_to_use:  10
+
+
+
+***Povezovanje na podatkovno bazo...
+***Pridobivanje podatkov o podatkovnih tipih stolpcev...
+***Zbiranje vseh omejitev tipov 'tuji kljuc' in 'primarni kljuc'...
+***Iskanje tabel, z najmanj 2 tujima kljucema...
+
+
+
+self.object_types:  ['staff', 'film', 'customer', 'inventory', 'category', 'country', 'language', 'actor', 'rental', 'payment', 'city', 'address', 'store']
+self.tables_nr_fk:  Counter({'payment_p2007_05': 3, 'payment_p2007_06': 3, 'payment_p2007_02': 3, 'rental': 3, 'payment_p2007_04': 3, 'payment_p2007_03': 3, 'payment': 3, 'payment_p2007_01': 3, 'film': 2, 'staff': 2, 'customer': 2, 'inventory': 2, 'film_category': 2, 'store': 2, 'film_actor': 2, 'address': 1, 'city': 1})
+self.tables_gte2_fk:  ['payment_p2007_05', 'film', 'staff', 'customer', 'payment_p2007_06', 'payment_p2007_02', 'inventory', 'film_category', 'store', 'rental', 'film_actor', 'payment_p2007_04', 'payment_p2007_03', 'payment', 'payment_p2007_01']
+
+
+
+MODIFIED TABLES SQL: None
+***Izbor stolpcev primernih za zlivanje..
+
+
+self.column_fusion:  {'inventory inventory_id': ('inventory_id', 'integer'), 'film description': ('description', 'text'), 'city country_id': ('country_id', 'smallint'), 'payment staff_id': ('staff_id', 'smallint'), 'nicer_but_slower_film_list actors': ('actors', 'text'), 'payment_p2007_04 rental_id': ('rental_id', 'integer'), 'payment_p2007_02 customer_id': ('customer_id', 'smallint'), 'payment_p2007_03 amount': ('amount', 'numeric'), 'customer_list name': ('name', 'text'), 'staff store_id': ('store_id', 'smallint'), 'rental rental_id': ('rental_id', 'integer'), 'payment_p2007_01 amount': ('amount', 'numeric'), 'payment_p2007_03 staff_id': ('staff_id', 'smallint'), 'actor_info film_info': ('film_info', 'text'), 'film_list fid': ('fid', 'integer'), 'customer_list id': ('id', 'integer'), 'payment payment_id': ('payment_id', 'integer'), 'payment_p2007_04 customer_id': ('customer_id', 'smallint'), 'customer address_id': ('address_id', 'smallint'), 'payment_p2007_01 customer_id': ('customer_id', 'smallint'), 'inventory film_id': ('film_id', 'smallint'), 'customer_list notes': ('notes', 'text'), 'payment_p2007_02 payment_id': ('payment_id', 'integer'), 'payment_p2007_01 rental_id': ('rental_id', 'integer'), 'payment customer_id': ('customer_id', 'smallint'), 'nicer_but_slower_film_list fid': ('fid', 'integer'), 'store address_id': ('address_id', 'smallint'), 'payment_p2007_06 rental_id': ('rental_id', 'integer'), 'store manager_staff_id': ('manager_staff_id', 'smallint'), 'film rental_duration': ('rental_duration', 'smallint'), 'payment_p2007_06 staff_id': ('staff_id', 'smallint'), 'inventory store_id': ('store_id', 'smallint'), 'film language_id': ('language_id', 'smallint'), 'payment_p2007_02 staff_id': ('staff_id', 'smallint'), 'payment_p2007_05 staff_id': ('staff_id', 'smallint'), 'payment_p2007_02 rental_id': ('rental_id', 'integer'), 'film film_id': ('film_id', 'integer'), 'customer customer_id': ('customer_id', 'integer'), 'staff staff_id': ('staff_id', 'integer'), 'payment_p2007_06 customer_id': ('customer_id', 'smallint'), 'rental customer_id': ('customer_id', 'smallint'), 'category category_id': ('category_id', 'integer'), 'sales_by_store total_sales': ('total_sales', 'numeric'), 'film_list price': ('price', 'numeric'), 'city city_id': ('city_id', 'integer'), 'staff_list name': ('name', 'text'), 'payment_p2007_04 amount': ('amount', 'numeric'), 'payment_p2007_02 amount': ('amount', 'numeric'), 'address city_id': ('city_id', 'smallint'), 'film_actor actor_id': ('actor_id', 'smallint'), 'store store_id': ('store_id', 'integer'), 'payment_p2007_03 customer_id': ('customer_id', 'smallint'), 'payment_p2007_01 payment_id': ('payment_id', 'integer'), 'rental staff_id': ('staff_id', 'smallint'), 'sales_by_store store': ('store', 'text'), 'customer store_id': ('store_id', 'smallint'), 'actor_info actor_id': ('actor_id', 'integer'), 'film_list length': ('length', 'smallint'), 'film_list actors': ('actors', 'text'), 'nicer_but_slower_film_list description': ('description', 'text'), 'film rental_rate': ('rental_rate', 'numeric'), 'payment_p2007_03 payment_id': ('payment_id', 'integer'), 'film_list description': ('description', 'text'), 'payment amount': ('amount', 'numeric'), 'payment_p2007_01 staff_id': ('staff_id', 'smallint'), 'payment rental_id': ('rental_id', 'integer'), 'film replacement_cost': ('replacement_cost', 'numeric'), 'film length': ('length', 'smallint'), 'nicer_but_slower_film_list length': ('length', 'smallint'), 'customer active': ('active', 'integer'), 'customer_list sid': ('sid', 'smallint'), 'film_actor film_id': ('film_id', 'smallint'), 'film release_year': ('release_year', 'integer'), 'payment_p2007_04 staff_id': ('staff_id', 'smallint'), 'payment_p2007_06 payment_id': ('payment_id', 'integer'), 'payment_p2007_05 payment_id': ('payment_id', 'integer'), 'rental inventory_id': ('inventory_id', 'integer'), 'payment_p2007_06 amount': ('amount', 'numeric'), 'nicer_but_slower_film_list price': ('price', 'numeric'), 'staff_list sid': ('sid', 'smallint'), 'payment_p2007_05 amount': ('amount', 'numeric'), 'sales_by_film_category total_sales': ('total_sales', 'numeric'), 'actor actor_id': ('actor_id', 'integer'), 'language language_id': ('language_id', 'integer'), 'staff_list id': ('id', 'integer'), 'payment_p2007_05 customer_id': ('customer_id', 'smallint'), 'country country_id': ('country_id', 'integer'), 'payment_p2007_04 payment_id': ('payment_id', 'integer'), 'film original_language_id': ('original_language_id', 'smallint'), 'address address_id': ('address_id', 'integer'), 'payment_p2007_03 rental_id': ('rental_id', 'integer'), 'payment_p2007_05 rental_id': ('rental_id', 'integer'), 'sales_by_store manager': ('manager', 'text'), 'staff address_id': ('address_id', 'smallint'), 'film_category category_id': ('category_id', 'smallint'), 'film_category film_id': ('film_id', 'smallint')}
+***Gradnja relacijskih in omejitvenih matrik..
+	 ( 1 / 17 )	Gradim relacijske matrike za tabelo:  payment_p2007_05
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_05_staff_id_fkey', 'payment_p2007_05', 'staff') in ('payment_p2007_05_rental_id_fkey', 'payment_p2007_05', 'rental')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  2  X  16044
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 amount
+							Poskusam ustvariti prazno matriko velikosti:  2  X  16044
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_05_staff_id_fkey', 'payment_p2007_05', 'staff') in ('payment_p2007_05_customer_id_fkey', 'payment_p2007_05', 'customer')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  2  X  599
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 amount
+							Poskusam ustvariti prazno matriko velikosti:  2  X  599
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_05_rental_id_fkey', 'payment_p2007_05', 'rental') in ('payment_p2007_05_customer_id_fkey', 'payment_p2007_05', 'customer')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  599
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 amount
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  599
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_05 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 2 / 17 )	Gradim relacijske matrike za tabelo:  inventory
+			( 1 / 1 )	Gradim relacijske matrike za povezavi: ('inventory_film_id_fkey', 'inventory', 'film') in ('inventory_store_id_fkey', 'inventory', 'store')
+					( 1 / 3 )	Gradim relacijske matrike stolpec: inventory inventory_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 3 )	Gradim relacijske matrike stolpec: inventory film_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 3 )	Gradim relacijske matrike stolpec: inventory store_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+
+
+fk_names_linked_to_t:  {('inventory_film_id_fkey', 'inventory', 'film'), ('inventory_store_id_fkey', 'inventory', 'store')} 
+
+
+('inventory_film_id_fkey', 'inventory', 'film')
+JE OT
+			( 1 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('inventory_film_id_fkey', 'inventory', 'film')
+('inventory_store_id_fkey', 'inventory', 'store')
+JE OT
+			( 2 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('inventory_store_id_fkey', 'inventory', 'store')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 3 / 17 )	Gradim relacijske matrike za tabelo:  staff
+			( 1 / 1 )	Gradim relacijske matrike za povezavi: ('staff_store_id_fkey', 'staff', 'store') in ('staff_address_id_fkey', 'staff', 'address')
+					( 1 / 3 )	Gradim relacijske matrike stolpec: staff store_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 3 )	Gradim relacijske matrike stolpec: staff staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 3 )	Gradim relacijske matrike stolpec: staff address_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+
+
+fk_names_linked_to_t:  {('staff_store_id_fkey', 'staff', 'store'), ('staff_address_id_fkey', 'staff', 'address')} 
+
+
+('staff_store_id_fkey', 'staff', 'store')
+JE OT
+			( 1 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('staff_store_id_fkey', 'staff', 'store')
+('staff_address_id_fkey', 'staff', 'address')
+JE OT
+			( 2 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('staff_address_id_fkey', 'staff', 'address')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 4 / 17 )	Gradim relacijske matrike za tabelo:  address
+
+
+fk_names_linked_to_t:  {('address_city_id_fkey', 'address', 'city')} 
+
+
+('address_city_id_fkey', 'address', 'city')
+JE OT
+			( 1 / 1 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('address_city_id_fkey', 'address', 'city')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 5 / 17 )	Gradim relacijske matrike za tabelo:  film
+
+
+fk_names_linked_to_t:  {('film_language_id_fkey', 'film', 'language'), ('film_original_language_id_fkey', 'film', 'language')} 
+
+
+('film_language_id_fkey', 'film', 'language')
+JE OT
+			( 1 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('film_language_id_fkey', 'film', 'language')
+('film_original_language_id_fkey', 'film', 'language')
+JE OT
+			( 2 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('film_original_language_id_fkey', 'film', 'language')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 6 / 17 )	Gradim relacijske matrike za tabelo:  payment_p2007_06
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_06_staff_id_fkey', 'payment_p2007_06', 'staff') in ('payment_p2007_06_rental_id_fkey', 'payment_p2007_06', 'rental')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  2  X  16044
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 amount
+							Poskusam ustvariti prazno matriko velikosti:  2  X  16044
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_06_staff_id_fkey', 'payment_p2007_06', 'staff') in ('payment_p2007_06_customer_id_fkey', 'payment_p2007_06', 'customer')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  2  X  599
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 amount
+							Poskusam ustvariti prazno matriko velikosti:  2  X  599
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_06_rental_id_fkey', 'payment_p2007_06', 'rental') in ('payment_p2007_06_customer_id_fkey', 'payment_p2007_06', 'customer')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  599
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_06 amount
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  599
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 7 / 17 )	Gradim relacijske matrike za tabelo:  payment_p2007_02
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_02_customer_id_fkey', 'payment_p2007_02', 'customer') in ('payment_p2007_02_staff_id_fkey', 'payment_p2007_02', 'staff')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  599  X  2
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 amount
+							Poskusam ustvariti prazno matriko velikosti:  599  X  2
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_02_customer_id_fkey', 'payment_p2007_02', 'customer') in ('payment_p2007_02_rental_id_fkey', 'payment_p2007_02', 'rental')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  599  X  16044
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 amount
+							Poskusam ustvariti prazno matriko velikosti:  599  X  16044
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_02_staff_id_fkey', 'payment_p2007_02', 'staff') in ('payment_p2007_02_rental_id_fkey', 'payment_p2007_02', 'rental')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  2  X  16044
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_02 amount
+							Poskusam ustvariti prazno matriko velikosti:  2  X  16044
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 8 / 17 )	Gradim relacijske matrike za tabelo:  customer
+			( 1 / 1 )	Gradim relacijske matrike za povezavi: ('customer_store_id_fkey', 'customer', 'store') in ('customer_address_id_fkey', 'customer', 'address')
+					( 1 / 4 )	Gradim relacijske matrike stolpec: customer address_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 4 )	Gradim relacijske matrike stolpec: customer customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 4 )	Gradim relacijske matrike stolpec: customer store_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 4 )	Gradim relacijske matrike stolpec: customer active
+							Poskusam ustvariti prazno matriko velikosti:  2  X  603
+
+
+fk_names_linked_to_t:  {('customer_store_id_fkey', 'customer', 'store'), ('customer_address_id_fkey', 'customer', 'address')} 
+
+
+('customer_store_id_fkey', 'customer', 'store')
+JE OT
+			( 1 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('customer_store_id_fkey', 'customer', 'store')
+('customer_address_id_fkey', 'customer', 'address')
+JE OT
+			( 2 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('customer_address_id_fkey', 'customer', 'address')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 9 / 17 )	Gradim relacijske matrike za tabelo:  film_category
+			( 1 / 1 )	Gradim relacijske matrike za povezavi: ('film_category_category_id_fkey', 'film_category', 'category') in ('film_category_film_id_fkey', 'film_category', 'film')
+					( 1 / 2 )	Gradim relacijske matrike stolpec: film_category category_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 2 )	Gradim relacijske matrike stolpec: film_category film_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 10 / 17 )	Gradim relacijske matrike za tabelo:  store
+			( 1 / 1 )	Gradim relacijske matrike za povezavi: ('store_manager_staff_id_fkey', 'store', 'staff') in ('store_address_id_fkey', 'store', 'address')
+					( 1 / 3 )	Gradim relacijske matrike stolpec: store address_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 3 )	Gradim relacijske matrike stolpec: store manager_staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 3 )	Gradim relacijske matrike stolpec: store store_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+
+
+fk_names_linked_to_t:  {('store_manager_staff_id_fkey', 'store', 'staff'), ('store_address_id_fkey', 'store', 'address')} 
+
+
+('store_manager_staff_id_fkey', 'store', 'staff')
+JE OT
+			( 1 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('store_manager_staff_id_fkey', 'store', 'staff')
+('store_address_id_fkey', 'store', 'address')
+JE OT
+			( 2 / 2 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('store_address_id_fkey', 'store', 'address')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 11 / 17 )	Gradim relacijske matrike za tabelo:  rental
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('rental_inventory_id_fkey', 'rental', 'inventory') in ('rental_staff_id_fkey', 'rental', 'staff')
+					( 1 / 4 )	Gradim relacijske matrike stolpec: rental rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 4 )	Gradim relacijske matrike stolpec: rental customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 4 )	Gradim relacijske matrike stolpec: rental staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 4 )	Gradim relacijske matrike stolpec: rental inventory_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('rental_inventory_id_fkey', 'rental', 'inventory') in ('rental_customer_id_fkey', 'rental', 'customer')
+					( 1 / 4 )	Gradim relacijske matrike stolpec: rental rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 4 )	Gradim relacijske matrike stolpec: rental customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 4 )	Gradim relacijske matrike stolpec: rental staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 4 )	Gradim relacijske matrike stolpec: rental inventory_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('rental_staff_id_fkey', 'rental', 'staff') in ('rental_customer_id_fkey', 'rental', 'customer')
+					( 1 / 4 )	Gradim relacijske matrike stolpec: rental rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 4 )	Gradim relacijske matrike stolpec: rental customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 4 )	Gradim relacijske matrike stolpec: rental staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 4 )	Gradim relacijske matrike stolpec: rental inventory_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+
+
+fk_names_linked_to_t:  {('rental_inventory_id_fkey', 'rental', 'inventory'), ('rental_staff_id_fkey', 'rental', 'staff'), ('rental_customer_id_fkey', 'rental', 'customer')} 
+
+
+('rental_inventory_id_fkey', 'rental', 'inventory')
+JE OT
+			( 1 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('rental_inventory_id_fkey', 'rental', 'inventory')
+('rental_staff_id_fkey', 'rental', 'staff')
+JE OT
+			( 2 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('rental_staff_id_fkey', 'rental', 'staff')
+('rental_customer_id_fkey', 'rental', 'customer')
+JE OT
+			( 3 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('rental_customer_id_fkey', 'rental', 'customer')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 12 / 17 )	Gradim relacijske matrike za tabelo:  film_actor
+			( 1 / 1 )	Gradim relacijske matrike za povezavi: ('film_actor_film_id_fkey', 'film_actor', 'film') in ('film_actor_actor_id_fkey', 'film_actor', 'actor')
+					( 1 / 2 )	Gradim relacijske matrike stolpec: film_actor actor_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 2 )	Gradim relacijske matrike stolpec: film_actor film_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 13 / 17 )	Gradim relacijske matrike za tabelo:  payment_p2007_04
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_04_customer_id_fkey', 'payment_p2007_04', 'customer') in ('payment_p2007_04_staff_id_fkey', 'payment_p2007_04', 'staff')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 amount
+							Poskusam ustvariti prazno matriko velikosti:  599  X  2
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  599  X  2
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_04_customer_id_fkey', 'payment_p2007_04', 'customer') in ('payment_p2007_04_rental_id_fkey', 'payment_p2007_04', 'rental')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 amount
+							Poskusam ustvariti prazno matriko velikosti:  599  X  16044
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  599  X  16044
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_04_staff_id_fkey', 'payment_p2007_04', 'staff') in ('payment_p2007_04_rental_id_fkey', 'payment_p2007_04', 'rental')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 amount
+							Poskusam ustvariti prazno matriko velikosti:  2  X  16044
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_04 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  2  X  16044
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 14 / 17 )	Gradim relacijske matrike za tabelo:  payment_p2007_03
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_03_rental_id_fkey', 'payment_p2007_03', 'rental') in ('payment_p2007_03_customer_id_fkey', 'payment_p2007_03', 'customer')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 amount
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  599
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  599
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_03_rental_id_fkey', 'payment_p2007_03', 'rental') in ('payment_p2007_03_staff_id_fkey', 'payment_p2007_03', 'staff')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 amount
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  2
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  2
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_03_customer_id_fkey', 'payment_p2007_03', 'customer') in ('payment_p2007_03_staff_id_fkey', 'payment_p2007_03', 'staff')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 amount
+							Poskusam ustvariti prazno matriko velikosti:  599  X  2
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  599  X  2
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_03 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 15 / 17 )	Gradim relacijske matrike za tabelo:  payment
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('payment_rental_id_fkey', 'payment', 'rental') in ('payment_staff_id_fkey', 'payment', 'staff')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment payment_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment amount
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  2
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('payment_rental_id_fkey', 'payment', 'rental') in ('payment_customer_id_fkey', 'payment', 'customer')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment payment_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment amount
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  599
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('payment_staff_id_fkey', 'payment', 'staff') in ('payment_customer_id_fkey', 'payment', 'customer')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment payment_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment amount
+							Poskusam ustvariti prazno matriko velikosti:  2  X  599
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+
+
+fk_names_linked_to_t:  {('payment_rental_id_fkey', 'payment', 'rental'), ('payment_staff_id_fkey', 'payment', 'staff'), ('payment_customer_id_fkey', 'payment', 'customer')} 
+
+
+('payment_rental_id_fkey', 'payment', 'rental')
+JE OT
+			( 1 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('payment_rental_id_fkey', 'payment', 'rental')
+('payment_staff_id_fkey', 'payment', 'staff')
+JE OT
+			( 2 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('payment_staff_id_fkey', 'payment', 'staff')
+('payment_customer_id_fkey', 'payment', 'customer')
+JE OT
+			( 3 / 3 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('payment_customer_id_fkey', 'payment', 'customer')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 16 / 17 )	Gradim relacijske matrike za tabelo:  city
+
+
+fk_names_linked_to_t:  {('city_country_id_fkey', 'city', 'country')} 
+
+
+('city_country_id_fkey', 'city', 'country')
+JE OT
+			( 1 / 1 )	Gradim omejitvene oz. indikatorske matrike za povezavo s: ('city_country_id_fkey', 'city', 'country')
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+	 ( 17 / 17 )	Gradim relacijske matrike za tabelo:  payment_p2007_01
+			( 1 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_01_customer_id_fkey', 'payment_p2007_01', 'customer') in ('payment_p2007_01_rental_id_fkey', 'payment_p2007_01', 'rental')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 amount
+							Poskusam ustvariti prazno matriko velikosti:  599  X  16044
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  599  X  16044
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 2 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_01_customer_id_fkey', 'payment_p2007_01', 'customer') in ('payment_p2007_01_staff_id_fkey', 'payment_p2007_01', 'staff')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 amount
+							Poskusam ustvariti prazno matriko velikosti:  599  X  2
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  599  X  2
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+			( 3 / 3 )	Gradim relacijske matrike za povezavi: ('payment_p2007_01_rental_id_fkey', 'payment_p2007_01', 'rental') in ('payment_p2007_01_staff_id_fkey', 'payment_p2007_01', 'staff')
+					( 1 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 amount
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  2
+					( 2 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 customer_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 3 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 rental_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+					( 4 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 payment_id
+							Poskusam ustvariti prazno matriko velikosti:  16044  X  2
+					( 5 / 5 )	Gradim relacijske matrike stolpec: payment_p2007_01 staff_id
+							Stolpec predstavlja kljuc (primarni ali tuji) in zato ni primeren za gradnjo matrik.
+***Preverjam stevilo alternativnih relacijskih matrik za relacije..
+
+
+RELACIJSKE MATRIKE: {'film language': [array([[  1.,  nan,  nan,  nan,  nan,  nan],
+       [  1.,  nan,  nan,  nan,  nan,  nan],
+       [  1.,  nan,  nan,  nan,  nan,  nan],
+       ..., 
+       [  1.,  nan,  nan,  nan,  nan,  nan],
+       [  1.,  nan,  nan,  nan,  nan,  nan],
+       [  1.,  nan,  nan,  nan,  nan,  nan]])], 'store staff': [array([[  1.,  nan],
+       [ nan,   1.]])], 'payment customer': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'rental staff': [array([[  1.,  nan],
+       [ nan,   1.],
+       [  1.,  nan],
+       ..., 
+       [ nan,   1.],
+       [ nan,   1.],
+       [ nan,   1.]]), array([[  nan,   nan],
+       [  nan,   nan],
+       [ 4.99,   nan],
+       ..., 
+       [  nan,   nan],
+       [  nan,   nan],
+       [  nan,   nan]]), array([[    nan,     nan],
+       [    nan,     nan],
+       [ 23462.,     nan],
+       ..., 
+       [    nan,     nan],
+       [    nan,     nan],
+       [    nan,     nan]]), array([[  nan,  2.99],
+       [  nan,  0.99],
+       [ 4.99,   nan],
+       ..., 
+       [  nan,  6.99],
+       [ 5.99,   nan],
+       [ 0.99,   nan]]), array([[ nan,  nan],
+       [ nan,  nan],
+       [ nan,  nan],
+       ..., 
+       [ nan,  nan],
+       [ nan,  nan],
+       [ nan,  nan]]), array([[ nan,  nan],
+       [ nan,  nan],
+       [ nan,  nan],
+       ..., 
+       [ nan,  nan],
+       [ nan,  nan],
+       [ nan,  nan]])], 'payment staff': [array([[ nan,   1.],
+       [ nan,   1.],
+       [  1.,  nan],
+       ..., 
+       [ nan,   1.],
+       [  1.,  nan],
+       [ nan,   1.]])], 'customer staff': [array([[ 18136.,  18135.],
+       [ 18272.,  18274.],
+       [ 19222.,  19224.],
+       ..., 
+       [ 17338.,  17339.],
+       [ 18455.,  18453.],
+       [ 19395.,  19394.]]), array([[  6.99,   9.99],
+       [ 10.99,   2.99],
+       [  0.99,   2.99],
+       ..., 
+       [  0.99,   2.99],
+       [  1.99,   6.99],
+       [  2.99,   2.99]]), array([[ 2.99,  0.99],
+       [ 2.99,  9.99],
+       [ 7.99,  2.99],
+       ..., 
+       [ 0.99,  0.99],
+       [ 4.99,  3.99],
+       [ 2.99,  4.99]]), array([[ 27864.,  27860.],
+       [ 28284.,  28286.],
+       [ 31125.,  31126.],
+       ..., 
+       [ 25552.,  25550.],
+       [ 28853.,  28852.],
+       [ 31604.,  31601.]]), array([[ 1.99,  9.99],
+       [ 8.99,  4.99],
+       [ 7.99,  7.99],
+       ..., 
+       [ 5.99,  9.99],
+       [ 4.99,  4.99],
+       [ 1.99,  0.99]]), array([[ 21798.,  21799.],
+       [ 22138.,  22141.],
+       [ 24487.,  24482.],
+       ..., 
+       [ 19852.,  19850.],
+       [ 22577.,  22578.],
+       [ 24875.,  24874.]]), array([[ 4.99,  2.99],
+       [  nan,  2.99],
+       [  nan,  7.99],
+       ..., 
+       [ 0.99,  4.99],
+       [ 0.99,  6.99],
+       [ 0.99,  4.99]]), array([[ 16504.,  16503.],
+       [    nan,  16568.],
+       [    nan,  17044.],
+       ..., 
+       [ 16114.,  16116.],
+       [ 16653.,  16654.],
+       [ 17122.,  17123.]])], 'staff customer': [array([[    nan,     nan,     nan, ...,     nan,     nan,     nan],
+       [    nan,     nan,     nan, ...,  31929.,     nan,     nan]]), array([[  nan,   nan,   nan, ...,   nan,   nan,   nan],
+       [  nan,   nan,   nan, ...,  4.99,   nan,   nan]]), array([[ 2.99,  2.99,  7.99, ...,  0.99,  4.99,  2.99],
+       [ 0.99,  9.99,  2.99, ...,  4.99,  3.99,  4.99]])], 'customer rental': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'city country': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,   1.,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,   1.,  nan]])], 'customer address': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'rental customer': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'address city': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'payment rental': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'staff address': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'store address': [array([[ nan,   1.,   1., ...,  nan,  nan,   1.],
+       [  1.,  nan,  nan, ...,   1.,   1.,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'staff rental': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]]), array([[    nan,     nan,     nan, ...,     nan,  17909.,     nan],
+       [    nan,  17420.,     nan, ...,     nan,     nan,     nan]]), array([[  nan,   nan,   nan, ...,   nan,  5.99,   nan],
+       [  nan,  0.99,   nan, ...,   nan,   nan,   nan]]), array([[  nan,   nan,   nan, ...,   nan,   nan,  0.99],
+       [ 2.99,   nan,   nan, ...,  6.99,   nan,   nan]]), array([[    nan,     nan,     nan, ...,     nan,     nan,  28427.],
+       [ 30120.,     nan,     nan, ...,  31345.,     nan,     nan]])], 'rental inventory': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'staff store': [array([[  1.,  nan],
+       [ nan,   1.]])], 'inventory film': [array([[ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       ..., 
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan],
+       [ nan,  nan,  nan, ...,  nan,  nan,  nan]])], 'customer store': [array([[  1.,  nan],
+       [  1.,  nan],
+       [  1.,  nan],
+       ..., 
+       [ nan,   1.],
+       [ nan,   1.],
+       [ nan,   1.]])], 'inventory store': [array([[ nan,   1.],
+       [  1.,  nan],
+       [ nan,   1.],
+       ..., 
+       [  1.,  nan],
+       [ nan,   1.],
+       [  1.,  nan]])]} 
+
+
+***Zlivanje podatkov..
+***Generiram graf za zlivanje..
+	#Pripravljam grafe za zlivanje..
+			 ( 1 / 62208 ) Pripravljam graf..
+					 ..zlivam graf..
+GRAF:
+ FusionGraph(Object types: 11, Relations: 21)
+GRAF OBJEKTNI TIPI:
+ OrderedDict([(ObjectType("film"), True), (ObjectType("language"), True), (ObjectType("store"), True), (ObjectType("staff"), True), (ObjectType("payment"), True), (ObjectType("customer"), True), (ObjectType("rental"), True), (ObjectType("city"), True), (ObjectType("country"), True), (ObjectType("address"), True), (ObjectType("inventory"), True)])
+GRAF RELACIJE:
+ OrderedDict([(Relation(ObjectType("film") → ObjectType("language")), True), (Relation(ObjectType("store") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("customer")), True), (Relation(ObjectType("rental") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("staff")), True), (Relation(ObjectType("customer") → ObjectType("staff")), True), (Relation(ObjectType("staff") → ObjectType("customer")), True), (Relation(ObjectType("customer") → ObjectType("rental")), True), (Relation(ObjectType("city") → ObjectType("country")), True), (Relation(ObjectType("customer") → ObjectType("address")), True), (Relation(ObjectType("rental") → ObjectType("customer")), True), (Relation(ObjectType("address") → ObjectType("city")), True), (Relation(ObjectType("payment") → ObjectType("rental")), True), (Relation(ObjectType("staff") → ObjectType("address")), True), (Relation(ObjectType("store") → ObjectType("address")), True), (Relation(ObjectType("staff") → ObjectType("rental")), True), (Relation(ObjectType("rental") → ObjectType("inventory")), True), (Relation(ObjectType("staff") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("film")), True), (Relation(ObjectType("customer") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("store")), True)])
+					( 1 / 21 ) ..ocenjujem rekonstrukcijo relacije:  film language
+					( 2 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store staff
+					( 3 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment customer
+					( 4 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental staff
+					( 5 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment staff
+					( 6 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer staff
+					( 7 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff customer
+					( 8 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer rental
+					( 9 / 21 ) ..ocenjujem rekonstrukcijo relacije:  city country
+					( 10 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer address
+					( 11 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental customer
+					( 12 / 21 ) ..ocenjujem rekonstrukcijo relacije:  address city
+					( 13 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment rental
+					( 14 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff address
+					( 15 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store address
+					( 16 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff rental
+					( 17 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental inventory
+					( 18 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff store
+					( 19 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory film
+					( 20 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer store
+					( 21 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory store
+					UREJEN SEZNAM RELACIJ: [('customer store', 2.4838474249736628e-05), ('payment rental', 8.4401870860045569e-05), ('staff address', 0.00014744744598736703), ('customer address', 0.0001562237915364271), ('store staff', 0.00016770953194555449), ('staff store', 0.00016770953194555449), ('inventory film', 0.00057354451572399633), ('rental inventory', 0.00064554844353927618), ('address city', 0.00079632004815948681), ('city country', 0.0025328986089366364), ('staff rental', 0.0038354553054298101), ('rental staff', 0.0038354553054298101), ('store address', 0.0043738028458210031), ('customer rental', 0.0044153104943647466), ('rental customer', 0.0044153104943647466), ('payment customer', 0.0047894070327402644), ('film language', 0.014138709462754679), ('inventory store', 0.017765332935738124), ('payment staff', 0.029105830882037682), ('customer staff', 0.070426968595196565), ('staff customer', 0.070426968595196565)]
+			 ( 2 / 62208 ) Pripravljam graf..
+					 ..zlivam graf..
+GRAF:
+ FusionGraph(Object types: 11, Relations: 21)
+GRAF OBJEKTNI TIPI:
+ OrderedDict([(ObjectType("film"), True), (ObjectType("language"), True), (ObjectType("store"), True), (ObjectType("staff"), True), (ObjectType("payment"), True), (ObjectType("customer"), True), (ObjectType("rental"), True), (ObjectType("city"), True), (ObjectType("country"), True), (ObjectType("address"), True), (ObjectType("inventory"), True)])
+GRAF RELACIJE:
+ OrderedDict([(Relation(ObjectType("film") → ObjectType("language")), True), (Relation(ObjectType("store") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("customer")), True), (Relation(ObjectType("rental") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("staff")), True), (Relation(ObjectType("customer") → ObjectType("staff")), True), (Relation(ObjectType("staff") → ObjectType("customer")), True), (Relation(ObjectType("customer") → ObjectType("rental")), True), (Relation(ObjectType("city") → ObjectType("country")), True), (Relation(ObjectType("customer") → ObjectType("address")), True), (Relation(ObjectType("rental") → ObjectType("customer")), True), (Relation(ObjectType("address") → ObjectType("city")), True), (Relation(ObjectType("payment") → ObjectType("rental")), True), (Relation(ObjectType("staff") → ObjectType("address")), True), (Relation(ObjectType("store") → ObjectType("address")), True), (Relation(ObjectType("staff") → ObjectType("rental")), True), (Relation(ObjectType("rental") → ObjectType("inventory")), True), (Relation(ObjectType("staff") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("film")), True), (Relation(ObjectType("customer") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("store")), True)])
+					( 1 / 21 ) ..ocenjujem rekonstrukcijo relacije:  film language
+					( 2 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store staff
+					( 3 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment customer
+					( 4 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental staff
+					( 5 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment staff
+					( 6 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer staff
+					( 7 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff customer
+					( 8 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer rental
+					( 9 / 21 ) ..ocenjujem rekonstrukcijo relacije:  city country
+					( 10 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer address
+					( 11 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental customer
+					( 12 / 21 ) ..ocenjujem rekonstrukcijo relacije:  address city
+					( 13 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment rental
+					( 14 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff address
+					( 15 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store address
+					( 16 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff rental
+					( 17 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental inventory
+					( 18 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff store
+					( 19 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory film
+					( 20 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer store
+					( 21 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory store
+					UREJEN SEZNAM RELACIJ: [('address city', 4.5468612840823938e-05), ('customer store', 4.6542844622282497e-05), ('payment rental', 8.8441560507721456e-05), ('store staff', 0.00010604296451676662), ('staff store', 0.00010604296451676662), ('payment customer', 0.00044360635996309485), ('city country', 0.0012943447403772905), ('rental inventory', 0.0013227277468060945), ('staff address', 0.0017980443541386357), ('customer address', 0.0018063064928567191), ('customer staff', 0.0025719559693147889), ('staff customer', 0.0025719559693147889), ('inventory film', 0.0039424030354016787), ('customer rental', 0.0041092902963918302), ('rental customer', 0.0041092902963918302), ('payment staff', 0.008412543876426367), ('staff rental', 0.0086161659271926632), ('rental staff', 0.0086161659271926632), ('film language', 0.024007256398938789), ('store address', 0.03118657007742591), ('inventory store', 0.071100437945582087)]
+			 ( 3 / 62208 ) Pripravljam graf..
+					 ..zlivam graf..
+GRAF:
+ FusionGraph(Object types: 11, Relations: 21)
+GRAF OBJEKTNI TIPI:
+ OrderedDict([(ObjectType("film"), True), (ObjectType("language"), True), (ObjectType("store"), True), (ObjectType("staff"), True), (ObjectType("payment"), True), (ObjectType("customer"), True), (ObjectType("rental"), True), (ObjectType("city"), True), (ObjectType("country"), True), (ObjectType("address"), True), (ObjectType("inventory"), True)])
+GRAF RELACIJE:
+ OrderedDict([(Relation(ObjectType("film") → ObjectType("language")), True), (Relation(ObjectType("store") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("customer")), True), (Relation(ObjectType("rental") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("staff")), True), (Relation(ObjectType("customer") → ObjectType("staff")), True), (Relation(ObjectType("staff") → ObjectType("customer")), True), (Relation(ObjectType("customer") → ObjectType("rental")), True), (Relation(ObjectType("city") → ObjectType("country")), True), (Relation(ObjectType("customer") → ObjectType("address")), True), (Relation(ObjectType("rental") → ObjectType("customer")), True), (Relation(ObjectType("address") → ObjectType("city")), True), (Relation(ObjectType("payment") → ObjectType("rental")), True), (Relation(ObjectType("staff") → ObjectType("address")), True), (Relation(ObjectType("store") → ObjectType("address")), True), (Relation(ObjectType("staff") → ObjectType("rental")), True), (Relation(ObjectType("rental") → ObjectType("inventory")), True), (Relation(ObjectType("staff") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("film")), True), (Relation(ObjectType("customer") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("store")), True)])
+					( 1 / 21 ) ..ocenjujem rekonstrukcijo relacije:  film language
+					( 2 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store staff
+					( 3 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment customer
+					( 4 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental staff
+					( 5 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment staff
+					( 6 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer staff
+					( 7 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff customer
+					( 8 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer rental
+					( 9 / 21 ) ..ocenjujem rekonstrukcijo relacije:  city country
+					( 10 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer address
+					( 11 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental customer
+					( 12 / 21 ) ..ocenjujem rekonstrukcijo relacije:  address city
+					( 13 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment rental
+					( 14 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff address
+					( 15 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store address
+					( 16 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff rental
+					( 17 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental inventory
+					( 18 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff store
+					( 19 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory film
+					( 20 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer store
+					( 21 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory store
+					UREJEN SEZNAM RELACIJ: [('payment rental', 0.00023014851479993549), ('inventory film', 0.00036478201306962759), ('rental inventory', 0.00036695871589923618), ('staff address', 0.00072077920020205031), ('customer address', 0.00073243325284304479), ('inventory store', 0.0008294677104909667), ('address city', 0.0014859523392034403), ('city country', 0.0018030497097986434), ('staff rental', 0.0025318626062861577), ('rental staff', 0.0025318626062861577), ('store staff', 0.0036395250299313285), ('staff store', 0.0036395250299313285), ('customer store', 0.0038460153622035674), ('customer rental', 0.0044929368820883697), ('rental customer', 0.0044929368820883697), ('payment customer', 0.0069903495839578013), ('payment staff', 0.013041653246906638), ('store address', 0.016603623379787553), ('customer staff', 0.017659822080171781), ('staff customer', 0.017659822080171781), ('film language', 0.025091121201506795)]
+			 ( 4 / 62208 ) Pripravljam graf..
+					 ..zlivam graf..
+GRAF:
+ FusionGraph(Object types: 11, Relations: 21)
+GRAF OBJEKTNI TIPI:
+ OrderedDict([(ObjectType("film"), True), (ObjectType("language"), True), (ObjectType("store"), True), (ObjectType("staff"), True), (ObjectType("payment"), True), (ObjectType("customer"), True), (ObjectType("rental"), True), (ObjectType("city"), True), (ObjectType("country"), True), (ObjectType("address"), True), (ObjectType("inventory"), True)])
+GRAF RELACIJE:
+ OrderedDict([(Relation(ObjectType("film") → ObjectType("language")), True), (Relation(ObjectType("store") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("customer")), True), (Relation(ObjectType("rental") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("staff")), True), (Relation(ObjectType("customer") → ObjectType("staff")), True), (Relation(ObjectType("staff") → ObjectType("customer")), True), (Relation(ObjectType("customer") → ObjectType("rental")), True), (Relation(ObjectType("city") → ObjectType("country")), True), (Relation(ObjectType("customer") → ObjectType("address")), True), (Relation(ObjectType("rental") → ObjectType("customer")), True), (Relation(ObjectType("address") → ObjectType("city")), True), (Relation(ObjectType("payment") → ObjectType("rental")), True), (Relation(ObjectType("staff") → ObjectType("address")), True), (Relation(ObjectType("store") → ObjectType("address")), True), (Relation(ObjectType("staff") → ObjectType("rental")), True), (Relation(ObjectType("rental") → ObjectType("inventory")), True), (Relation(ObjectType("staff") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("film")), True), (Relation(ObjectType("customer") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("store")), True)])
+					( 1 / 21 ) ..ocenjujem rekonstrukcijo relacije:  film language
+					( 2 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store staff
+					( 3 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment customer
+					( 4 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental staff
+					( 5 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment staff
+					( 6 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer staff
+					( 7 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff customer
+					( 8 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer rental
+					( 9 / 21 ) ..ocenjujem rekonstrukcijo relacije:  city country
+					( 10 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer address
+					( 11 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental customer
+					( 12 / 21 ) ..ocenjujem rekonstrukcijo relacije:  address city
+					( 13 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment rental
+					( 14 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff address
+					( 15 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store address
+					( 16 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff rental
+					( 17 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental inventory
+					( 18 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff store
+					( 19 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory film
+					( 20 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer store
+					( 21 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory store
+					UREJEN SEZNAM RELACIJ: [('customer store', 2.5228251517499935e-05), ('store staff', 5.2239548909957478e-05), ('staff store', 5.2239548909957478e-05), ('payment rental', 5.4182764750149685e-05), ('rental inventory', 8.3913115585638372e-05), ('staff rental', 0.00028421350127309558), ('rental staff', 0.00028421350127309558), ('inventory film', 0.00061567670169511142), ('payment customer', 0.00064870043437476748), ('address city', 0.0016116658619442863), ('city country', 0.0027117396439418286), ('staff address', 0.0030033197135242869), ('customer address', 0.0030073662787070978), ('customer rental', 0.0044459007900785477), ('rental customer', 0.0044459007900785477), ('payment staff', 0.0078483209069094926), ('customer staff', 0.007869084306839717), ('staff customer', 0.007869084306839717), ('film language', 0.010334075165784997), ('inventory store', 0.02432284630689922), ('store address', 0.051430114219698689)]
+			 ( 5 / 62208 ) Pripravljam graf..
+					 ..zlivam graf..
+GRAF:
+ FusionGraph(Object types: 11, Relations: 21)
+GRAF OBJEKTNI TIPI:
+ OrderedDict([(ObjectType("film"), True), (ObjectType("language"), True), (ObjectType("store"), True), (ObjectType("staff"), True), (ObjectType("payment"), True), (ObjectType("customer"), True), (ObjectType("rental"), True), (ObjectType("city"), True), (ObjectType("country"), True), (ObjectType("address"), True), (ObjectType("inventory"), True)])
+GRAF RELACIJE:
+ OrderedDict([(Relation(ObjectType("film") → ObjectType("language")), True), (Relation(ObjectType("store") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("customer")), True), (Relation(ObjectType("rental") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("staff")), True), (Relation(ObjectType("customer") → ObjectType("staff")), True), (Relation(ObjectType("staff") → ObjectType("customer")), True), (Relation(ObjectType("customer") → ObjectType("rental")), True), (Relation(ObjectType("city") → ObjectType("country")), True), (Relation(ObjectType("customer") → ObjectType("address")), True), (Relation(ObjectType("rental") → ObjectType("customer")), True), (Relation(ObjectType("address") → ObjectType("city")), True), (Relation(ObjectType("payment") → ObjectType("rental")), True), (Relation(ObjectType("staff") → ObjectType("address")), True), (Relation(ObjectType("store") → ObjectType("address")), True), (Relation(ObjectType("staff") → ObjectType("rental")), True), (Relation(ObjectType("rental") → ObjectType("inventory")), True), (Relation(ObjectType("staff") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("film")), True), (Relation(ObjectType("customer") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("store")), True)])
+					( 1 / 21 ) ..ocenjujem rekonstrukcijo relacije:  film language
+					( 2 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store staff
+					( 3 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment customer
+					( 4 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental staff
+					( 5 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment staff
+					( 6 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer staff
+					( 7 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff customer
+					( 8 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer rental
+					( 9 / 21 ) ..ocenjujem rekonstrukcijo relacije:  city country
+					( 10 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer address
+					( 11 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental customer
+					( 12 / 21 ) ..ocenjujem rekonstrukcijo relacije:  address city
+					( 13 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment rental
+					( 14 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff address
+					( 15 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store address
+					( 16 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff rental
+					( 17 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental inventory
+					( 18 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff store
+					( 19 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory film
+					( 20 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer store
+					( 21 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory store
+					UREJEN SEZNAM RELACIJ: [('customer store', 8.1550749413391657e-05), ('store staff', 0.00013104995210279154), ('staff store', 0.00013104995210279154), ('payment rental', 0.00041965053112058873), ('rental inventory', 0.00048242144559698967), ('inventory film', 0.0016598274404226406), ('payment customer', 0.0018204328805788779), ('customer address', 0.0021257222503710889), ('staff address', 0.0021285355264051395), ('address city', 0.0024435399899716864), ('city country', 0.0034958061110491505), ('staff rental', 0.0036965526401177501), ('rental staff', 0.0036965526401177501), ('customer rental', 0.0043701092817486163), ('rental customer', 0.0043701092817486163), ('customer staff', 0.017780089852532512), ('staff customer', 0.017780089852532512), ('inventory store', 0.018578068168191079), ('store address', 0.036025216191409991), ('payment staff', 0.038539432790419256), ('film language', 0.081318473530362034)]
+			 ( 6 / 62208 ) Pripravljam graf..
+					 ..zlivam graf..
+GRAF:
+ FusionGraph(Object types: 11, Relations: 21)
+GRAF OBJEKTNI TIPI:
+ OrderedDict([(ObjectType("film"), True), (ObjectType("language"), True), (ObjectType("store"), True), (ObjectType("staff"), True), (ObjectType("payment"), True), (ObjectType("customer"), True), (ObjectType("rental"), True), (ObjectType("city"), True), (ObjectType("country"), True), (ObjectType("address"), True), (ObjectType("inventory"), True)])
+GRAF RELACIJE:
+ OrderedDict([(Relation(ObjectType("film") → ObjectType("language")), True), (Relation(ObjectType("store") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("customer")), True), (Relation(ObjectType("rental") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("staff")), True), (Relation(ObjectType("customer") → ObjectType("staff")), True), (Relation(ObjectType("staff") → ObjectType("customer")), True), (Relation(ObjectType("customer") → ObjectType("rental")), True), (Relation(ObjectType("city") → ObjectType("country")), True), (Relation(ObjectType("customer") → ObjectType("address")), True), (Relation(ObjectType("rental") → ObjectType("customer")), True), (Relation(ObjectType("address") → ObjectType("city")), True), (Relation(ObjectType("payment") → ObjectType("rental")), True), (Relation(ObjectType("staff") → ObjectType("address")), True), (Relation(ObjectType("store") → ObjectType("address")), True), (Relation(ObjectType("staff") → ObjectType("rental")), True), (Relation(ObjectType("rental") → ObjectType("inventory")), True), (Relation(ObjectType("staff") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("film")), True), (Relation(ObjectType("customer") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("store")), True)])
+					( 1 / 21 ) ..ocenjujem rekonstrukcijo relacije:  film language
+					( 2 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store staff
+					( 3 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment customer
+					( 4 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental staff
+					( 5 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment staff
+					( 6 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer staff
+					( 7 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff customer
+					( 8 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer rental
+					( 9 / 21 ) ..ocenjujem rekonstrukcijo relacije:  city country
+					( 10 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer address
+					( 11 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental customer
+					( 12 / 21 ) ..ocenjujem rekonstrukcijo relacije:  address city
+					( 13 / 21 ) ..ocenjujem rekonstrukcijo relacije:  payment rental
+					( 14 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff address
+					( 15 / 21 ) ..ocenjujem rekonstrukcijo relacije:  store address
+					( 16 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff rental
+					( 17 / 21 ) ..ocenjujem rekonstrukcijo relacije:  rental inventory
+					( 18 / 21 ) ..ocenjujem rekonstrukcijo relacije:  staff store
+					( 19 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory film
+					( 20 / 21 ) ..ocenjujem rekonstrukcijo relacije:  customer store
+					( 21 / 21 ) ..ocenjujem rekonstrukcijo relacije:  inventory store
+					UREJEN SEZNAM RELACIJ: [('payment rental', 3.0603838567259219e-06), ('payment customer', 6.8459313570943325e-06), ('store staff', 2.28185431250273e-05), ('staff store', 2.28185431250273e-05), ('customer store', 2.7831536378751712e-05), ('staff rental', 6.7416854207927218e-05), ('rental staff', 6.7416854207927218e-05), ('inventory film', 0.000212354855984533), ('rental inventory', 0.00021730741643261487), ('film language', 0.00038438461849434535), ('customer staff', 0.00086909404414838389), ('staff customer', 0.00086909404414838389), ('staff address', 0.00097547697643778455), ('customer address', 0.00097572127297266133), ('address city', 0.0014610111039812985), ('payment staff', 0.0028189572010843375), ('city country', 0.0035082795929324557), ('customer rental', 0.0044748283611535265), ('rental customer', 0.0044748283611535265), ('store address', 0.017296150171034464), ('inventory store', 0.027562511285935457)]
+			 ( 7 / 62208 ) Pripravljam graf..
+					 ..zlivam graf..
+GRAF:
+ FusionGraph(Object types: 11, Relations: 21)
+GRAF OBJEKTNI TIPI:
+ OrderedDict([(ObjectType("film"), True), (ObjectType("language"), True), (ObjectType("store"), True), (ObjectType("staff"), True), (ObjectType("payment"), True), (ObjectType("customer"), True), (ObjectType("rental"), True), (ObjectType("city"), True), (ObjectType("country"), True), (ObjectType("address"), True), (ObjectType("inventory"), True)])
+GRAF RELACIJE:
+ OrderedDict([(Relation(ObjectType("film") → ObjectType("language")), True), (Relation(ObjectType("store") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("customer")), True), (Relation(ObjectType("rental") → ObjectType("staff")), True), (Relation(ObjectType("payment") → ObjectType("staff")), True), (Relation(ObjectType("customer") → ObjectType("staff")), True), (Relation(ObjectType("staff") → ObjectType("customer")), True), (Relation(ObjectType("customer") → ObjectType("rental")), True), (Relation(ObjectType("city") → ObjectType("country")), True), (Relation(ObjectType("customer") → ObjectType("address")), True), (Relation(ObjectType("rental") → ObjectType("customer")), True), (Relation(ObjectType("address") → ObjectType("city")), True), (Relation(ObjectType("payment") → ObjectType("rental")), True), (Relation(ObjectType("staff") → ObjectType("address")), True), (Relation(ObjectType("store") → ObjectType("address")), True), (Relation(ObjectType("staff") → ObjectType("rental")), True), (Relation(ObjectType("rental") → ObjectType("inventory")), True), (Relation(ObjectType("staff") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("film")), True), (Relation(ObjectType("customer") → ObjectType("store")), True), (Relation(ObjectType("inventory") → ObjectType("store")), True)])
