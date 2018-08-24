@@ -397,12 +397,6 @@ class FuseRDB():
         Uporabnik tudi poda oz. potrdi ime nove baze;
         :return:
         '''
-        #self.refresh_active_database_metadata()
-        '''
-        for t,t_data in self.active_database_meta['tables'].items():
-            for c,c_data in t_data['columns'].items():
-                print(c_data['data_type'])
-        '''
         entity_type_subset = None
         if self.number_of_entities_is_great():
             if self.presample_OT_dialog:
@@ -453,7 +447,6 @@ class FuseRDB():
             else:
                 self.minify_database()
                 self.set_database_connection_credential(self.database_connection_credential_active['connection_string'])
-                print('ACCCCCCCCCCCCTTTTTTIIIIIIVEEEEEEEEEE',self.database_connection_credential_active)
 
         # Odstrani podatke, ki se navezujejo na tiste tabele, ki jih ni v vzorcu
         if entity_type_subset is not None:
@@ -545,8 +538,6 @@ class FuseRDB():
         objects_table2 = self.active_database_meta['tables'][table2]['row_ids']
         if len(objects_table1) == 0 or len(objects_table2) == 0:
             return []
-        # CE JE MED DVEMA TABELAMA VEC FK POVEZAV KATERO IZBRATI ZA ZDRUZITEV TABEL?? --> TRETIRAJ LOCENO!! namesto po povezanih tabelah se sprehajaj po kombinacijah tujih kljucev
-        # sql_query="SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk if x[0]==y]) for y in table_table1_fk_names])+" INNER JOIN "+table2+" ON "+' AND '.join([' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk if x[0]==y]) for y in table_table2_fk_names])+';'
         sql_query = "SELECT " + ', '.join('a.' + x[4] for x in table_table1_fk) + ', ' + ', '.join('b.' + x[4] for x in
                                                                                                    table_table2_fk) + ', ' + table + '.' + column_id + " FROM " + table + " INNER JOIN " + table1 + " as a ON " + ' AND '.join(
             [x[1] + '.' + x[2] + ' = ' + 'a.' + x[4] for x in
@@ -554,8 +545,6 @@ class FuseRDB():
             [x[1] + '.' + x[2] + ' = ' + 'b.' + x[4] for x in table_table2_fk]) + ';'
         cursor = self.database_active_connection.cursor()
         cursor.execute(sql_query)
-        # print("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
-        # self.cursor.execute("SELECT "+', '.join(x[3]+'.'+x[4] for x in table_table1_fk)+', '+', '.join(x[3]+'.'+x[4] for x in table_table2_fk)+', '+table+'.'+column_id+" FROM "+table1+" INNER JOIN "+table+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table1_fk])+" INNER JOIN "+table2+" ON "+' AND '.join([x[1]+'.'+x[2]+' = '+x[3]+'.'+x[4] for x in table_table2_fk])+';')
         rows = cursor.fetchall()
         column_dtype = [('fk1-' + str(i) + '_' + table_table1_fk[i][3] + '.' + table_table1_fk[i][4],
                          self.postgres_to_python_data_type(
@@ -580,13 +569,6 @@ class FuseRDB():
                            (table + '.' + column_id, self.postgres_to_python_data_type(
                                self.active_database_meta['tables'][table]['columns'][column_id]['data_type']))]
         if sum([x[-1] is None for x in rows]):
-            '''
-            if column_dtype[-1][1] is object:
-                print('ROWS',rows)
-                print(rows[:,-1])
-            else:
-                column_dtype[-1] = (column_dtype[-1][0], np.float)
-            '''
             if column_dtype[-1][1] is not object:
                 print('NOT OBJECT')
                 column_dtype[-1] = (column_dtype[-1][0], np.float)
@@ -617,16 +599,9 @@ class FuseRDB():
                 rows = tmp
                 # dummy variable trap?
                 # move dummy variables from begining to end of table!
-        for i in range(nr_columns):
-            # R=np.zeros((len(objects_table1[1]),len(objects_table2[1])))
-            print("\t\t\t\t\t\t\tPoskusam ustvariti prazno matriko velikosti: ", len(objects_table1), " X ",
-                  len(objects_table2))
-            R = np.empty((len(objects_table1), len(objects_table2)))
-            R.fill(np.nan)
-            # R.fill(-9999999999)
-            matrices.append(R)
         column_order_row_o1 = [x[4] for x in table_table1_fk]
         column_order_row_o2 = [x[4] for x in table_table2_fk]
+        matrix_combos={}
         for row in rows:
             row = list(row)
             c1 = row[0:len(self.active_database_meta['tables'][table1]['column_name_PK'])]
@@ -642,9 +617,48 @@ class FuseRDB():
             c2 = (c2_dict[x] for x in self.active_database_meta['tables'][table2]['column_name_PK'])
             c2 = tuple(c2)
             v = row[-nr_columns:]
+
+            if not (c1,c2) in matrix_combos:
+                matrix_combos[(c1,c2)]=[set() for i in range(nr_columns)]
             for i in range(nr_columns):
-                matrices[i][self.active_database_meta['tables'][table1]['row_ids'].index(c1)][
-                    self.active_database_meta['tables'][table2]['row_ids'].index(c2)] = v[i]
+                matrix_combos[(c1,c2)][i].add(v[i])
+
+        matrix_combos_iterators=[]
+        matrix_combos_keys=list(matrix_combos.keys())
+        for i in range(nr_columns):
+            matrix_combos_iterators.append(itertools.product(
+            *[matrix_combos[object_combo][i] for object_combo in matrix_combos_keys]))
+
+        matrix_combos_lengths=[]
+        for i in range(nr_columns):
+            matrix_combos_lengths.append(np.prod([len(matrix_combos[x][i]) for x in matrix_combos]))
+        nr_matrices=sum(matrix_combos_lengths)
+
+        if self.parameters['alternative_matrices_limit'] is not None and self.parameters['alternative_matrices_limit']<nr_matrices:
+            print('Stevilo matrik ('+str(nr_matrices)+') presega omejitev ('+self.parameters['alternative_matrices_limit']+'). Omejujem nabor.')
+            nr_matrices=self.parameters['alternative_matrices_limit']
+
+        for i in range(nr_matrices):
+            k=i%nr_columns
+            while matrix_combos_lengths[k%nr_columns]<=0:
+                k+=1
+            matrix_combos_lengths[k]-=1
+            combo = next(matrix_combos_iterators[k])
+
+            print("\t\t\t\t\t\t\tPoskusam ustvariti prazno matriko velikosti: ", len(objects_table1), " X ",len(objects_table2))
+            R = np.empty((len(objects_table1), len(objects_table2)))
+            R.fill(np.nan)
+
+
+            for j in range(len(matrix_combos_keys)):
+                o1=matrix_combos_keys[j][0]
+                o2=matrix_combos_keys[j][1]
+                o1_idx=self.active_database_meta['tables'][table1]['row_ids'].index(o1)
+                o2_idx=self.active_database_meta['tables'][table2]['row_ids'].index(o2)
+                v=combo[j]
+                R[o1_idx,o2_idx]=v
+            matrices.append(R)
+
         for m in matrices:
             if np.isnan(m.all()):
                 matrices.remove(m)
@@ -688,8 +702,8 @@ class FuseRDB():
                 self.active_database_meta['tables'][table2]['column_name_PK'])]
             if len(object1_id) == 0 or len(object2_id) == 0 or None in object1_id or None in object2_id:
                 continue
-            object1_indx = list(objects_table1).index(object1_id)
-            object2_indx = list(objects_table2).index(object2_id)
+            object1_indx = self.active_database_meta['tables'][table1]['row_ids'].index(object1_id)#list(objects_table1).index(object1_id)
+            object2_indx = self.active_database_meta['tables'][table2]['row_ids'].index(object2_id)#list(objects_table2).index(object2_id)
             R[object1_indx, object2_indx] = 1
 
         if np.isnan(R.all()):
@@ -1026,10 +1040,8 @@ class FuseRDB():
 
 
 if __name__ == "__main__":
-    '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2',
                    dummy_var_treshold=4)
-    '''
     '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/parameciumdb',
                    database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb',
@@ -1047,5 +1059,5 @@ if __name__ == "__main__":
                    dummy_var_treshold=4, alternative_matrices_limit=1, object_types_limit=10)
     '''
     #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
-    fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
+    #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
     #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/french_towns',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
