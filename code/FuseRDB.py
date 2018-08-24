@@ -583,7 +583,7 @@ class FuseRDB():
                 return []
             else:
                 labelencoder = LabelEncoder()
-                print("ROWS to TRANSFORM by LABELENCODER", rows[table + '.' + column_id])
+                print("\t\t\t\t\t\t\tROWS to TRANSFORM by LABELENCODER", rows[table + '.' + column_id])
                 rows[table + '.' + column_id] = labelencoder.fit_transform(rows[table + '.' + column_id])
                 nr_columns = len(labelencoder.classes_)
                 onehotencoder = OneHotEncoder(categorical_features=[-1])
@@ -631,11 +631,11 @@ class FuseRDB():
 
         matrix_combos_lengths=[]
         for i in range(nr_columns):
-            matrix_combos_lengths.append(np.prod([len(matrix_combos[x][i]) for x in matrix_combos]))
+            matrix_combos_lengths.append(int(np.prod([len(matrix_combos[x][i]) for x in matrix_combos])))
         nr_matrices=sum(matrix_combos_lengths)
 
         if self.parameters['alternative_matrices_limit'] is not None and self.parameters['alternative_matrices_limit']<nr_matrices:
-            print('Stevilo matrik ('+str(nr_matrices)+') presega omejitev ('+self.parameters['alternative_matrices_limit']+'). Omejujem nabor.')
+            print('\t\t\t\t\t\t\tStevilo matrik ('+str(nr_matrices)+') presega omejitev ('+str(self.parameters['alternative_matrices_limit'])+'). Omejujem nabor.')
             nr_matrices=self.parameters['alternative_matrices_limit']
 
         for i in range(nr_matrices):
@@ -1040,8 +1040,7 @@ class FuseRDB():
 
 
 if __name__ == "__main__":
-    fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2',
-                   dummy_var_treshold=4)
+    #fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2',dummy_var_treshold=4)
     '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/parameciumdb',
                    database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb',
@@ -1059,5 +1058,5 @@ if __name__ == "__main__":
                    dummy_var_treshold=4, alternative_matrices_limit=1, object_types_limit=10)
     '''
     #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
-    #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
+    fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
     #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/french_towns',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
