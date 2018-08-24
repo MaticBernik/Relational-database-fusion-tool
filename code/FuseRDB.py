@@ -520,6 +520,7 @@ class FuseRDB():
         :return:list of relational matrices.
         Only 1 matrix if binarization of attribute(column_id) is not required.
         '''
+        build_dummy=self.is_text_data_type(self.active_database_meta['tables'][table]['columns'][column_id]['data_type'])
 
         # table=fk_link1[1]
         table1 = fk_link1[2]
@@ -574,8 +575,7 @@ class FuseRDB():
                 column_dtype[-1] = (column_dtype[-1][0], np.float)
         rows = np.array(rows, dtype=column_dtype)
         nr_columns = 1
-        if rows.shape[0] > 0 and self.is_text_data_type(
-                self.active_database_meta['tables'][table]['columns'][column_id]['data_type']):
+        if rows.shape[0] > 0 and build_dummy:
 
             if None in [x[-1] for x in rows]:
                 print(
@@ -601,6 +601,15 @@ class FuseRDB():
                 # move dummy variables from begining to end of table!
         column_order_row_o1 = [x[4] for x in table_table1_fk]
         column_order_row_o2 = [x[4] for x in table_table2_fk]
+
+        if build_dummy:
+            for i in range(nr_columns):
+                print("\t\t\t\t\t\t\tPoskusam ustvariti prazno matriko velikosti: ", len(objects_table1), " X ",
+                      len(objects_table2))
+                R = np.empty((len(objects_table1), len(objects_table2)))
+                R.fill(np.nan)
+                matrices.append(R)
+
         matrix_combos={}
         for row in rows:
             row = list(row)
@@ -618,46 +627,54 @@ class FuseRDB():
             c2 = tuple(c2)
             v = row[-nr_columns:]
 
-            if not (c1,c2) in matrix_combos:
-                matrix_combos[(c1,c2)]=[set() for i in range(nr_columns)]
+            if build_dummy:
+                #Pri indikatorskih matrikah lahko z 1 oznacimo povezanost dveh objektov razlicnih tipov tudi za vec vrednosti
+                o1_idx = self.active_database_meta['tables'][table1]['row_ids'].index(c1)
+                o2_idx = self.active_database_meta['tables'][table2]['row_ids'].index(c2)
+                for i in range(nr_columns):
+                    if not matrices[i][o1_idx][o2_idx] == 1:
+                        matrices[i][o1_idx][o2_idx]=v[i]
+            else:
+                if not (c1,c2) in matrix_combos:
+                    matrix_combos[(c1,c2)]=[set() for i in range(nr_columns)]
+                for i in range(nr_columns):
+                    matrix_combos[(c1,c2)][i].add(v[i])
+
+        if not build_dummy:
+            matrix_combos_iterators=[]
+            matrix_combos_keys=list(matrix_combos.keys())
             for i in range(nr_columns):
-                matrix_combos[(c1,c2)][i].add(v[i])
+                matrix_combos_iterators.append(itertools.product(
+                *[matrix_combos[object_combo][i] for object_combo in matrix_combos_keys]))
 
-        matrix_combos_iterators=[]
-        matrix_combos_keys=list(matrix_combos.keys())
-        for i in range(nr_columns):
-            matrix_combos_iterators.append(itertools.product(
-            *[matrix_combos[object_combo][i] for object_combo in matrix_combos_keys]))
+            matrix_combos_lengths=[]
+            for i in range(nr_columns):
+                matrix_combos_lengths.append(int(np.prod([len(matrix_combos[x][i]) for x in matrix_combos])))
+            nr_matrices=sum(matrix_combos_lengths)
 
-        matrix_combos_lengths=[]
-        for i in range(nr_columns):
-            matrix_combos_lengths.append(int(np.prod([len(matrix_combos[x][i]) for x in matrix_combos])))
-        nr_matrices=sum(matrix_combos_lengths)
+            if self.parameters['alternative_matrices_limit'] is not None and self.parameters['alternative_matrices_limit']<nr_matrices:
+                print('\t\t\t\t\t\t\tStevilo matrik ('+str(nr_matrices)+') presega omejitev ('+str(self.parameters['alternative_matrices_limit'])+'). Omejujem nabor.')
+                nr_matrices=self.parameters['alternative_matrices_limit']
 
-        if self.parameters['alternative_matrices_limit'] is not None and self.parameters['alternative_matrices_limit']<nr_matrices:
-            print('\t\t\t\t\t\t\tStevilo matrik ('+str(nr_matrices)+') presega omejitev ('+str(self.parameters['alternative_matrices_limit'])+'). Omejujem nabor.')
-            nr_matrices=self.parameters['alternative_matrices_limit']
+            for i in range(nr_matrices):
+                k=i%nr_columns
+                while matrix_combos_lengths[k%nr_columns]<=0:
+                    k+=1
+                matrix_combos_lengths[k]-=1
+                combo = next(matrix_combos_iterators[k])
 
-        for i in range(nr_matrices):
-            k=i%nr_columns
-            while matrix_combos_lengths[k%nr_columns]<=0:
-                k+=1
-            matrix_combos_lengths[k]-=1
-            combo = next(matrix_combos_iterators[k])
+                print("\t\t\t\t\t\t\tPoskusam ustvariti prazno matriko velikosti: ", len(objects_table1), " X ",len(objects_table2))
+                R = np.empty((len(objects_table1), len(objects_table2)))
+                R.fill(np.nan)
 
-            print("\t\t\t\t\t\t\tPoskusam ustvariti prazno matriko velikosti: ", len(objects_table1), " X ",len(objects_table2))
-            R = np.empty((len(objects_table1), len(objects_table2)))
-            R.fill(np.nan)
-
-
-            for j in range(len(matrix_combos_keys)):
-                o1=matrix_combos_keys[j][0]
-                o2=matrix_combos_keys[j][1]
-                o1_idx=self.active_database_meta['tables'][table1]['row_ids'].index(o1)
-                o2_idx=self.active_database_meta['tables'][table2]['row_ids'].index(o2)
-                v=combo[j]
-                R[o1_idx,o2_idx]=v
-            matrices.append(R)
+                for j in range(len(matrix_combos_keys)):
+                    o1=matrix_combos_keys[j][0]
+                    o2=matrix_combos_keys[j][1]
+                    o1_idx=self.active_database_meta['tables'][table1]['row_ids'].index(o1)
+                    o2_idx=self.active_database_meta['tables'][table2]['row_ids'].index(o2)
+                    v=combo[j]
+                    R[o1_idx,o2_idx]=v
+                matrices.append(R)
 
         for m in matrices:
             if np.isnan(m.all()):
@@ -1040,7 +1057,7 @@ class FuseRDB():
 
 
 if __name__ == "__main__":
-    #fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2',dummy_var_treshold=4)
+    fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2',dummy_var_treshold=4)
     '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/parameciumdb',
                    database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb',
@@ -1058,5 +1075,5 @@ if __name__ == "__main__":
                    dummy_var_treshold=4, alternative_matrices_limit=1, object_types_limit=10)
     '''
     #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
-    fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
+    #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
     #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/french_towns',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
