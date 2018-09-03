@@ -252,14 +252,6 @@ class FuseRDB():
         kot aktivno bazo
         :return:
         '''
-        '''
-        db_server = self.database_connection_credential_active[
-            'connection_string'][:self.database_connection_credential_active[
-            'connection_string'].rfind('/')]
-        db_name = self.database_connection_credential_active[
-            'connection_string'][self.database_connection_credential_active[
-            'connection_string'].rfind('/') + 1:]
-        '''
         credentials = self.connection_string_to_credentials(
             self.database_connection_credential_active['connection_string'])
         db_name = credentials['database'] if credentials['database'] is not None else 'mini_' + \
@@ -869,7 +861,10 @@ class FuseRDB():
         object_types = [t for t, data in self.active_database_meta['tables'].items() if data['is_object_type']]
         for type_name in object_types:
             # print("Kreiram ObjectType objekt za ",type_name)
-            object_types_fusion[type_name] = fusion.ObjectType(type_name)
+            if self.parameters['latent_factor'] is not None:
+                object_types_fusion[type_name] = fusion.ObjectType(type_name,self.parameters['latent_factor'])
+            else:
+                object_types_fusion[type_name] = fusion.ObjectType(type_name)
 
         fusion_sets_length = 1
 
@@ -974,19 +969,29 @@ class FuseRDB():
             gc.collect()
         print("***Konec zlivanja!!")
         relation_scores_avg = {}
+        relation_scores_best = {}
         for relation in object_type_relations:
             if relation[0] == relation[1]:
                 # Model ocitno ne generira napovedi za omejitvene matrike..
                 print("\t\t\t\t\t Preskocil relacijo med dvema enakima objektnima tipoma..", relation)
                 continue
-            sum = 0
-            for model in models_scores:
-                sum += models_scores[model][relation]
-            relation_scores_avg[relation] = sum / len(models_scores)
+            if self.parameters['multiple_models_relation_reconstruction'] == 'avg':
+                sum = 0
+                for model in models_scores:
+                    sum += models_scores[model][relation]
+                relation_scores_avg[relation] = sum / len(models_scores)
+            elif self.parameters['multiple_models_relation_reconstruction'] == 'best':
+                for model in models_scores:
+                    if not relation in relation_scores_best:
+                        relation_scores_best[relation]=models_scores[model][relation]
+                    elif models_scores[model][relation] < relation_scores_best[relation]:
+                        relation_scores_best[relation] = models_scores[model][relation]
             gc.collect()
-        relation_scores_avg_list = [(x, relation_scores_avg[x]) for x in relation_scores_avg]
-        relation_scores_avg_list.sort(key=lambda tup: tup[1])
-        return relation_scores_avg_list
+        relation_scores_all=relation_scores_avg if self.parameters['multiple_models_relation_reconstruction']=='avg' else relation_scores_best
+        relation_scores_final_list = [(x, relation_scores_all[x]) for x in relation_scores_all]
+        relation_scores_final_list.sort(key=lambda tup: tup[1])
+        print('RELATION SCORES',models_scores)
+        return relation_scores_final_list
 
     def __str__(self):
         string_representation='\nFuseRDB object:'
@@ -1002,7 +1007,7 @@ class FuseRDB():
 
     def __init__(self, database_connection, database2_connection_string=None, dummy_var_treshold=None,
                  fraction_of_rows_to_keep=None,
-                 alternative_matrices_limit=None, object_types_limit=None, entity_of_interest=None, max_matrix_size=100000):
+                 alternative_matrices_limit=None, object_types_limit=None, entity_of_interest=None, max_matrix_size=100000, latent_factor=None, multiple_models_relation_reconstruction='best'):
         self.database_connection_credential_base = {'database_system': 'postgresql', 'host': None, 'database': None,
                                                     'user': None, 'password': None, 'connection_string': None}
         self.database_connection_credential_active = {'database_system': 'postgresql', 'host': None, 'database': None,
@@ -1012,7 +1017,7 @@ class FuseRDB():
                                      'foreign_keys': {}}  # 'ime_tabele':{'stolpci':{'ime_stolpca':{'podatkovni_tip':PODATKOVNI_TIP,'primarni_kljuc':True/False, 'tuji_kljuc':True/False'}}, 'imena_stolpcev_PK':['ime_stolpca1','ime_stolpca2'],'imena_stolpcev_FK':{'ime_FK':'ime_stolpca1'}, 'objekti':[(vrednost_PK1_stolpca,vrednost_PK2_stolpca)] }
         self.parameters = {'dummy_var_treshold': None, 'fraction_of_rows_to_keep': None,
                            'alternative_matrices_limit': None,
-                           'object_types_limit': None, 'latent_factor': None, 'entity_of_interest':None, 'max_matrix_size':None}
+                           'object_types_limit': None, 'latent_factor': None, 'entity_of_interest':None, 'max_matrix_size':None, 'multiple_models_relation_reconstruction':None}
         self.presample_rows_dialog = True
         self.presample_OT_dialog = True
         if database_connection is not None:
@@ -1029,6 +1034,9 @@ class FuseRDB():
             self.presample_OT_dialog = False
         self.parameters['entity_of_interest']=entity_of_interest
         self.parameters['max_matrix_size']=max_matrix_size
+        if latent_factor is not None:
+            self.parameters['latent_factor']=int(latent_factor)
+        self.parameters['multiple_models_relation_reconstruction']=multiple_models_relation_reconstruction
         start_time = datetime.now()
 
         self.make_data_connection()
@@ -1057,22 +1065,18 @@ class FuseRDB():
 
 
 if __name__ == "__main__":
-    fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2',dummy_var_treshold=4)
+    fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2',dummy_var_treshold=4,alternative_matrices_limit=2,multiple_models_relation_reconstruction='best')
     '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/parameciumdb',
                    database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb',
                    dummy_var_treshold=4, fraction_of_rows_to_keep=0.00001, alternative_matrices_limit=1,
                    object_types_limit=20)
     '''
+
     '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb',
                    dummy_var_treshold=4, alternative_matrices_limit=1,
                    object_types_limit=10)
-    '''
-    '''
-    fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/parameciumdb',
-                   database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb',
-                   dummy_var_treshold=4, alternative_matrices_limit=1, object_types_limit=10)
     '''
     #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)
     #fuse=FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/pagila',dummy_var_treshold=4, fraction_of_rows_to_keep=1, alternative_matrices_limit=1)

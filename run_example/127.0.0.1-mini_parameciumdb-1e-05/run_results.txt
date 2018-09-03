@@ -1,0 +1,214 @@
+
+FuseRDB object:
+	Active database:
+		database: mini_parameciumdb
+		host: 127.0.0.1
+		database_system: postgresql
+		user: postgres
+		connection_string: postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb
+		password: geslo123
+	Parameters:
+		latent_factor: None
+		entity_of_interest: None
+		object_types_limit: 20
+		max_matrix_size: 100000
+		alternative_matrices_limit: 1
+		fraction_of_rows_to_keep: 1e-05
+		dummy_var_treshold: None
+
+
+
+RANGIRAN SEZNAM RELACIJ:
+	1. ('biomaterial', 'quantification') -- RMSE: --
+	2. ('genotype', 'protocol') -- RMSE: 4.5951867721
+	3. ('contact', 'arraydesign') -- RMSE: --
+	4. ('protocol', 'feature_cvterm') -- RMSE: --
+	5. ('phenotype_comparison', 'biomaterial') -- RMSE: --
+	6. ('organism', 'feature_cvterm') -- RMSE: --
+	7. ('study', 'acquisition') -- RMSE: --
+	8. ('biomaterial', 'element') -- RMSE: --
+	9. ('feature', 'arraydesign') -- RMSE: --
+	10. ('feature', 'biomaterial') -- RMSE: 0.00865491718896
+	11. ('cvterm', 'quantification') -- RMSE: --
+	12. ('organism', 'acquisition') -- RMSE: --
+	13. ('arraydesign', 'assay') -- RMSE: --
+	14. ('contact', 'assay') -- RMSE: --
+	15. ('cvterm', 'study') -- RMSE: --
+	16. ('genotype', 'phenotype') -- RMSE: 11.3629044261
+	17. ('phenotype_comparison', 'stock') -- RMSE: --
+	18. ('phenotype_comparison', 'feature_relationship') -- RMSE: --
+	19. ('contact', 'biomaterial') -- RMSE: --
+	20. ('pub', 'phenotype_comparison') -- RMSE: --
+	21. ('feature', 'feature_cvterm') -- RMSE: --
+	22. ('phenotype_comparison', 'feature_cvterm') -- RMSE: --
+	23. ('dbxref', 'element') -- RMSE: --
+	24. ('contact', 'protocol') -- RMSE: --
+	25. ('phenotype_comparison', 'acquisition') -- RMSE: --
+	26. ('phenotype', 'feature_relationship') -- RMSE: --
+	27. ('acquisition', 'feature_relationship') -- RMSE: --
+	28. ('feature', 'study') -- RMSE: --
+	29. ('dbxref', 'protocol') -- RMSE: 3.09138824929
+	30. ('cvterm', 'stock') -- RMSE: --
+	31. ('phenotype', 'protocol') -- RMSE: 0.0191851871077
+	32. ('study', 'protocol') -- RMSE: --
+	33. ('arraydesign', 'feature_relationship') -- RMSE: --
+	34. ('study', 'element') -- RMSE: --
+	35. ('phenotype_comparison', 'phenotype') -- RMSE: --
+	36. ('biomaterial', 'protocol') -- RMSE: 0.00180738320832
+	37. ('dbxref', 'feature_cvterm') -- RMSE: --
+	38. ('quantification', 'feature_relationship') -- RMSE: --
+	39. ('study', 'assay') -- RMSE: --
+	40. ('pub', 'biomaterial') -- RMSE: --
+	41. ('stock', 'feature_cvterm') -- RMSE: --
+	42. ('protocol', 'acquisition') -- RMSE: 0.0158999200319
+	43. ('arraydesign', 'phenotype') -- RMSE: --
+	44. ('acquisition', 'feature_cvterm') -- RMSE: --
+	45. ('genotype', 'cvterm') -- RMSE: 3.24323870553
+	46. ('cvterm', 'element') -- RMSE: --
+	47. ('biomaterial', 'assay') -- RMSE: --
+	48. ('dbxref', 'biomaterial') -- RMSE: 2.89689648736
+	49. ('dbxref', 'feature_relationship') -- RMSE: --
+	50. ('phenotype', 'quantification') -- RMSE: --
+	51. ('protocol', 'feature_relationship') -- RMSE: --
+	52. ('element', 'feature_relationship') -- RMSE: --
+	53. ('arraydesign', 'acquisition') -- RMSE: --
+	54. ('pub', 'cvterm') -- RMSE: --
+	55. ('feature', 'assay') -- RMSE: --
+	56. ('feature', 'quantification') -- RMSE: --
+	57. ('phenotype', 'assay') -- RMSE: --
+	58. ('feature', 'element') -- RMSE: --
+	59. ('contact', 'quantification') -- RMSE: --
+	60. ('genotype', 'stock') -- RMSE: --
+	61. ('cvterm', 'feature_cvterm') -- RMSE: --
+	62. ('organism', 'quantification') -- RMSE: --
+	63. ('contact', 'stock') -- RMSE: --
+	64. ('arraydesign', 'study') -- RMSE: --
+	65. ('arraydesign', 'quantification') -- RMSE: --
+	66. ('feature', 'cvterm') -- RMSE: 0.00258068700035
+	67. ('phenotype_comparison', 'organism') -- RMSE: --
+	68. ('cvterm', 'acquisition') -- RMSE: 0.00193550412868
+	69. ('element', 'organism') -- RMSE: --
+	70. ('genotype', 'study') -- RMSE: --
+	71. ('dbxref', 'quantification') -- RMSE: --
+	72. ('element', 'feature_cvterm') -- RMSE: --
+	73. ('stock', 'quantification') -- RMSE: --
+	74. ('assay', 'acquisition') -- RMSE: --
+	75. ('pub', 'study') -- RMSE: --
+	76. ('dbxref', 'organism') -- RMSE: --
+	77. ('contact', 'feature_relationship') -- RMSE: --
+	78. ('assay', 'feature_cvterm') -- RMSE: --
+	79. ('study', 'stock') -- RMSE: --
+	80. ('stock', 'acquisition') -- RMSE: --
+	81. ('biomaterial', 'feature_cvterm') -- RMSE: --
+	82. ('study', 'biomaterial') -- RMSE: --
+	83. ('protocol', 'assay') -- RMSE: --
+	84. ('organism', 'assay') -- RMSE: --
+	85. ('genotype', 'assay') -- RMSE: --
+	86. ('feature', 'feature_relationship') -- RMSE: --
+	87. ('biomaterial', 'acquisition') -- RMSE: 0.68250428946
+	88. ('contact', 'phenotype_comparison') -- RMSE: --
+	89. ('contact', 'phenotype') -- RMSE: --
+	90. ('stock', 'feature_relationship') -- RMSE: --
+	91. ('cvterm', 'biomaterial') -- RMSE: 0.0
+	92. ('arraydesign', 'feature_cvterm') -- RMSE: --
+	93. ('cvterm', 'phenotype_comparison') -- RMSE: --
+	94. ('pub', 'assay') -- RMSE: --
+	95. ('genotype', 'organism') -- RMSE: --
+	96. ('arraydesign', 'protocol') -- RMSE: --
+	97. ('pub', 'arraydesign') -- RMSE: --
+	98. ('phenotype', 'element') -- RMSE: --
+	99. ('arraydesign', 'element') -- RMSE: --
+	100. ('pub', 'element') -- RMSE: --
+	101. ('phenotype_comparison', 'study') -- RMSE: --
+	102. ('study', 'organism') -- RMSE: --
+	103. ('feature', 'pub') -- RMSE: --
+	104. ('arraydesign', 'organism') -- RMSE: --
+	105. ('element', 'stock') -- RMSE: --
+	106. ('contact', 'organism') -- RMSE: --
+	107. ('pub', 'contact') -- RMSE: --
+	108. ('feature', 'stock') -- RMSE: --
+	109. ('biomaterial', 'organism') -- RMSE: --
+	110. ('element', 'protocol') -- RMSE: --
+	111. ('dbxref', 'cvterm') -- RMSE: 0.865634324345
+	112. ('quantification', 'feature_cvterm') -- RMSE: --
+	113. ('arraydesign', 'biomaterial') -- RMSE: --
+	114. ('element', 'acquisition') -- RMSE: --
+	115. ('pub', 'phenotype') -- RMSE: --
+	116. ('dbxref', 'pub') -- RMSE: --
+	117. ('cvterm', 'feature_relationship') -- RMSE: --
+	118. ('cvterm', 'phenotype') -- RMSE: 0.00815399967378
+	119. ('feature', 'dbxref') -- RMSE: 0.920641324344
+	120. ('dbxref', 'phenotype') -- RMSE: 1.8198283902
+	121. ('contact', 'element') -- RMSE: --
+	122. ('contact', 'genotype') -- RMSE: --
+	123. ('stock', 'assay') -- RMSE: --
+	124. ('phenotype_comparison', 'protocol') -- RMSE: --
+	125. ('arraydesign', 'phenotype_comparison') -- RMSE: --
+	126. ('dbxref', 'arraydesign') -- RMSE: --
+	127. ('feature', 'phenotype') -- RMSE: 0.0262008087737
+	128. ('genotype', 'element') -- RMSE: --
+	129. ('pub', 'feature_relationship') -- RMSE: --
+	130. ('dbxref', 'acquisition') -- RMSE: 2.06894621894
+	131. ('pub', 'organism') -- RMSE: --
+	132. ('feature', 'genotype') -- RMSE: 13.6898485172
+	133. ('feature', 'phenotype_comparison') -- RMSE: --
+	134. ('genotype', 'biomaterial') -- RMSE: 7.06483828019
+	135. ('phenotype_comparison', 'element') -- RMSE: --
+	136. ('phenotype', 'acquisition') -- RMSE: 0.0318828742486
+	137. ('element', 'quantification') -- RMSE: --
+	138. ('arraydesign', 'genotype') -- RMSE: --
+	139. ('pub', 'acquisition') -- RMSE: --
+	140. ('protocol', 'quantification') -- RMSE: --
+	141. ('cvterm', 'protocol') -- RMSE: 0.0
+	142. ('phenotype', 'feature_cvterm') -- RMSE: --
+	143. ('feature', 'contact') -- RMSE: --
+	144. ('feature', 'organism') -- RMSE: --
+	145. ('phenotype', 'stock') -- RMSE: --
+	146. ('genotype', 'quantification') -- RMSE: --
+	147. ('arraydesign', 'cvterm') -- RMSE: --
+	148. ('contact', 'cvterm') -- RMSE: --
+	149. ('assay', 'quantification') -- RMSE: --
+	150. ('dbxref', 'stock') -- RMSE: --
+	151. ('cvterm', 'assay') -- RMSE: --
+	152. ('phenotype', 'biomaterial') -- RMSE: 0.0163495440516
+	153. ('study', 'feature_relationship') -- RMSE: --
+	154. ('quantification', 'acquisition') -- RMSE: --
+	155. ('study', 'feature_cvterm') -- RMSE: --
+	156. ('dbxref', 'phenotype_comparison') -- RMSE: --
+	157. ('pub', 'genotype') -- RMSE: --
+	158. ('organism', 'stock') -- RMSE: --
+	159. ('element', 'assay') -- RMSE: --
+	160. ('dbxref', 'study') -- RMSE: --
+	161. ('genotype', 'feature_relationship') -- RMSE: --
+	162. ('dbxref', 'contact') -- RMSE: --
+	163. ('phenotype', 'organism') -- RMSE: --
+	164. ('study', 'phenotype') -- RMSE: --
+	165. ('study', 'quantification') -- RMSE: --
+	166. ('organism', 'feature_relationship') -- RMSE: --
+	167. ('contact', 'acquisition') -- RMSE: --
+	168. ('genotype', 'acquisition') -- RMSE: 32.3567734011
+	169. ('contact', 'feature_cvterm') -- RMSE: --
+	170. ('genotype', 'feature_cvterm') -- RMSE: --
+	171. ('feature', 'acquisition') -- RMSE: 0.0
+	172. ('biomaterial', 'feature_relationship') -- RMSE: --
+	173. ('feature', 'protocol') -- RMSE: 0.047175815094
+	174. ('dbxref', 'assay') -- RMSE: --
+	175. ('phenotype_comparison', 'quantification') -- RMSE: --
+	176. ('dbxref', 'genotype') -- RMSE: 61.6421509427
+	177. ('phenotype_comparison', 'assay') -- RMSE: --
+	178. ('contact', 'study') -- RMSE: --
+	179. ('pub', 'feature_cvterm') -- RMSE: --
+	180. ('protocol', 'organism') -- RMSE: --
+	181. ('arraydesign', 'stock') -- RMSE: --
+	182. ('cvterm', 'organism') -- RMSE: --
+	183. ('pub', 'stock') -- RMSE: --
+	184. ('protocol', 'stock') -- RMSE: --
+	185. ('pub', 'protocol') -- RMSE: --
+	186. ('biomaterial', 'stock') -- RMSE: --
+	187. ('genotype', 'phenotype_comparison') -- RMSE: --
+	188. ('feature_cvterm', 'feature_relationship') -- RMSE: --
+	189. ('pub', 'quantification') -- RMSE: --
+	190. ('assay', 'feature_relationship') -- RMSE: --
+
+
+===== Postopek je trajal:	0:06:01.066425
