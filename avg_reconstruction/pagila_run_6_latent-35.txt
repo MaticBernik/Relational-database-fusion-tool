@@ -1,0 +1,47 @@
+
+FuseRDB object:
+	Active database:
+		database: pagila
+		database_system: postgresql
+		user: postgres
+		host: 192.168.217.128
+		connection_string: postgresql://postgres:geslo123@192.168.217.128/pagila
+		password: geslo123
+	Parameters:
+		dummy_var_treshold: None
+		fraction_of_rows_to_keep: 1
+		multiple_models_relation_reconstruction: avg
+		latent_factor: 35
+		alternative_matrices_limit: 1
+		max_matrix_size: 100000
+		object_types_limit: None
+		output_file_path: pagila_run_6_latent-35.txt
+		entity_of_interest: None
+
+
+
+RANGIRAN SEZNAM RELACIJ:
+	1. ('film', 'language') -- RMSE: --
+	2. ('address', 'city') -- RMSE: 1.99627786641e-05
+	3. ('payment', 'rental') -- RMSE: 5.61221238543e-05
+	4. ('store', 'staff') -- RMSE: 7.85815436801e-05
+	5. ('customer', 'store') -- RMSE: 9.73233837445e-05
+	6. ('film_actor', 'film') -- RMSE: 0.000231397806681
+	7. ('rental', 'inventory') -- RMSE: 0.000246311926195
+	8. ('film_category', 'film') -- RMSE: 0.000761888248589
+	9. ('inventory', 'store') -- RMSE: 0.000784466173641
+	10. ('customer', 'address') -- RMSE: 0.00106909324512
+	11. ('staff', 'address') -- RMSE: 0.00107000103456
+	12. ('inventory', 'film') -- RMSE: 0.00204407735869
+	13. ('city', 'country') -- RMSE: 0.00220608273659
+	14. ('payment', 'customer') -- RMSE: 0.002221991161
+	15. ('film_category', 'category') -- RMSE: 0.00256619596701
+	16. ('staff', 'customer') -- RMSE: 0.00337034164617
+	17. ('film_actor', 'actor') -- RMSE: 0.00421362688747
+	18. ('rental', 'customer') -- RMSE: 0.0108432374172
+	19. ('store', 'address') -- RMSE: 0.0179971485416
+	20. ('payment', 'staff') -- RMSE: 0.0794738455092
+	21. ('staff', 'rental') -- RMSE: 0.111698825832
+
+
+===== Postopek je trajal:	0:14:53.070589

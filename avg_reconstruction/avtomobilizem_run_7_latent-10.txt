@@ -1,0 +1,34 @@
+
+FuseRDB object:
+	Active database:
+		database: avtomobilizem2
+		database_system: postgresql
+		user: postgres
+		host: 192.168.217.128
+		connection_string: postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2
+		password: geslo123
+	Parameters:
+		dummy_var_treshold: None
+		fraction_of_rows_to_keep: None
+		multiple_models_relation_reconstruction: avg
+		latent_factor: 10
+		alternative_matrices_limit: 2
+		max_matrix_size: 100000
+		object_types_limit: None
+		output_file_path: avtomobilizem_run_7_latent-10.txt
+		entity_of_interest: None
+
+
+
+RANGIRAN SEZNAM RELACIJ:
+	1. ('lastnistvo', 'stranka') -- RMSE: 9.63149135153e-17
+	2. ('lastnistvo', 'avtomobil') -- RMSE: 5.77889481092e-16
+	3. ('avtomobil', 'model') -- RMSE: 1.02254289112e-15
+	4. ('jezik', 'jezikovna_skupina') -- RMSE: 5.80656979523e-15
+	5. ('drzava', 'jezik') -- RMSE: 0.017371037904
+	6. ('model', 'znamka') -- RMSE: 0.02059739253
+	7. ('avtomobil', 'drzava') -- RMSE: 0.0224867131479
+	8. ('drzava', 'model') -- RMSE: 0.0327445094379
+
+
+===== Postopek je trajal:	0:00:04.772210

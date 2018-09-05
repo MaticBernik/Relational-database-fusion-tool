@@ -1,0 +1,71 @@
+
+FuseRDB object:
+	Active database:
+		database: mini_parameciumdb
+		database_system: postgresql
+		user: postgres
+		host: 127.0.0.1
+		connection_string: postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb
+		password: geslo123
+	Parameters:
+		dummy_var_treshold: None
+		fraction_of_rows_to_keep: None
+		multiple_models_relation_reconstruction: avg
+		latent_factor: 10
+		alternative_matrices_limit: 1
+		max_matrix_size: 100000
+		object_types_limit: 10
+		output_file_path: parameciumDB_run_latent-10.txt
+		entity_of_interest: None
+
+
+
+RANGIRAN SEZNAM RELACIJ:
+	1. ('dbxref', 'quantification') -- RMSE: 0.0
+	2. ('cvterm', 'feature') -- RMSE: 0.000419583445284
+	3. ('dbxref', 'feature') -- RMSE: 0.000421291790778
+	4. ('pub', 'feature') -- RMSE: 0.000866989736184
+	5. ('cvterm', 'contact') -- RMSE: 0.00127881198232
+	6. ('biomaterial', 'feature') -- RMSE: 0.00153479330014
+	7. ('cvterm', 'dbxref') -- RMSE: 0.00154426337466
+	8. ('feature', 'quantification') -- RMSE: 0.00224671916744
+	9. ('biomaterial', 'dbxref') -- RMSE: 0.00246581996308
+	10. ('pub', 'cvterm') -- RMSE: 0.00337024351946
+	11. ('assay', 'dbxref') -- RMSE: 0.00362028315265
+	12. ('feature', 'contact') -- RMSE: 0.00378112171182
+	13. ('biomaterial', 'pub') -- RMSE: 0.0038387356067
+	14. ('cvterm', 'stock') -- RMSE: 0.00427835697923
+	15. ('biomaterial', 'protocol') -- RMSE: 0.00429077011625
+	16. ('pub', 'dbxref') -- RMSE: 0.00531168637597
+	17. ('protocol', 'feature') -- RMSE: 0.00543158022773
+	18. ('dbxref', 'stock') -- RMSE: 0.00579449799688
+	19. ('pub', 'protocol') -- RMSE: 0.00620972017396
+	20. ('protocol', 'contact') -- RMSE: 0.00715924566511
+	21. ('biomaterial', 'contact') -- RMSE: 0.00761598303823
+	22. ('dbxref', 'contact') -- RMSE: 0.00835250050772
+	23. ('dbxref', 'protocol') -- RMSE: 0.00839660731051
+	24. ('assay', 'feature') -- RMSE: 0.00954994285172
+	25. ('assay', 'cvterm') -- RMSE: 0.00975186850825
+	26. ('feature', 'stock') -- RMSE: 0.0114391311449
+	27. ('pub', 'stock') -- RMSE: 0.0137238106414
+	28. ('assay', 'pub') -- RMSE: 0.0144812961847
+	29. ('pub', 'contact') -- RMSE: 0.0161403630881
+	30. ('stock', 'quantification') -- RMSE: 0.0172718390498
+	31. ('assay', 'stock') -- RMSE: 0.0227573924526
+	32. ('biomaterial', 'stock') -- RMSE: 0.0237413972535
+	33. ('protocol', 'stock') -- RMSE: 0.0249322385353
+	34. ('assay', 'biomaterial') -- RMSE: 0.0250515377588
+	35. ('assay', 'protocol') -- RMSE: 0.026279068851
+	36. ('assay', 'contact') -- RMSE: 0.0263777185761
+	37. ('assay', 'quantification') -- RMSE: 0.0485844855609
+	38. ('stock', 'contact') -- RMSE: 0.0513270445043
+	39. ('biomaterial', 'quantification') -- RMSE: 0.0661796204671
+	40. ('cvterm', 'protocol') -- RMSE: 0.0679030024512
+	41. ('quantification', 'contact') -- RMSE: 0.0711566055902
+	42. ('protocol', 'quantification') -- RMSE: 0.0756620697146
+	43. ('cvterm', 'quantification') -- RMSE: 0.0898171695617
+	44. ('pub', 'quantification') -- RMSE: 0.09773143293
+	45. ('biomaterial', 'cvterm') -- RMSE: 0.166008247341
+
+
+===== Postopek je trajal:	0:00:37.820376

@@ -391,7 +391,7 @@ class FuseRDB():
         '''
         entity_type_subset = None
         if self.number_of_entities_is_great():
-            if self.presample_OT_dialog:
+            if self.object_types_sampling_dialog and self.presample_OT_dialog:
                 confirm_entity_type_sampling = input(
                     'V bazi je veliko stevilo tabel (' + str(len(self.active_database_meta[
                                                                      'tables'])) + '), kar lahko mocno podaljsa izvajalni cas. Zelite omejiti stevilo obravnavanih tabel (na podlagi stevila povezav)? [DA/ne]:')
@@ -416,7 +416,7 @@ class FuseRDB():
                         first_table_selected=self.parameters['entity_of_interest'])
             else:
                 entity_type_subset = self.limit_object_types_number()
-        if self.database_is_big():
+        if self.object_sampling_dialog and self.database_is_big():
             if self.presample_rows_dialog:
                 confirm_presampling = input(
                     'Zaradi velikosti podatkovne baze lahko pride do prekoracitve porabe razpolozljivega pomnilnika. Zelite zmanjsati stevilo vrstic v tabelah s postokom vzorcenja? [DA/ne]:')
@@ -460,7 +460,7 @@ class FuseRDB():
         scores = []
         for matrix in matrices_list:
             matrix = np.array(matrix)
-            #scores.append(np.sum(np.isnan(matrix)) / (matrix.shape[0] * matrix.shape[1]))
+            # scores.append(np.sum(np.isnan(matrix)) / (matrix.shape[0] * matrix.shape[1]))
             scores.append(1 - (np.sum(np.isnan(matrix)) / (matrix.shape[0] * matrix.shape[1])))
         chosen_matrices_indices = np.argsort(scores)[::-1][:self.parameters['alternative_matrices_limit']]
         return [matrices_list[i] for i in chosen_matrices_indices]
@@ -939,10 +939,13 @@ class FuseRDB():
             fusion_set_counter += 1
             # print("\t\t\t ( " + str(fusion_set_counter) + ' / ' + str(len(self.generate_fusion_graphs())) + " )")
             print("\t\t\t\t\t ..zlivam graf..")
+            '''
             if not self.parameters['latent_factor'] is None:
                 fuser = fusion.Dfmf(self.parameters['latent_factor'])
             else:
                 fuser = fusion.Dfmf()
+            '''
+            fuser = fusion.Dfmf()
             fuser.fuse(graph)
             # self.latent_data_models.append(fuser)
             relation_scores = {}
@@ -1007,7 +1010,7 @@ class FuseRDB():
 
     def __init__(self, database_connection, database2_connection_string=None, dummy_var_treshold=None,
                  fraction_of_rows_to_keep=None,
-                 alternative_matrices_limit=None, object_types_limit=None, entity_of_interest=None, max_matrix_size=100000, latent_factor=None, multiple_models_relation_reconstruction='best'):
+                 alternative_matrices_limit=None, object_types_limit=None, entity_of_interest=None, max_matrix_size=100000, latent_factor=None, multiple_models_relation_reconstruction='best', output_file_path=None,object_types_sampling_dialog=True,object_sampling_dialog=True):
         self.database_connection_credential_base = {'database_system': 'postgresql', 'host': None, 'database': None,
                                                     'user': None, 'password': None, 'connection_string': None}
         self.database_connection_credential_active = {'database_system': 'postgresql', 'host': None, 'database': None,
@@ -1017,7 +1020,7 @@ class FuseRDB():
                                      'foreign_keys': {}}  # 'ime_tabele':{'stolpci':{'ime_stolpca':{'podatkovni_tip':PODATKOVNI_TIP,'primarni_kljuc':True/False, 'tuji_kljuc':True/False'}}, 'imena_stolpcev_PK':['ime_stolpca1','ime_stolpca2'],'imena_stolpcev_FK':{'ime_FK':'ime_stolpca1'}, 'objekti':[(vrednost_PK1_stolpca,vrednost_PK2_stolpca)] }
         self.parameters = {'dummy_var_treshold': None, 'fraction_of_rows_to_keep': None,
                            'alternative_matrices_limit': None,
-                           'object_types_limit': None, 'latent_factor': None, 'entity_of_interest':None, 'max_matrix_size':None, 'multiple_models_relation_reconstruction':None}
+                           'object_types_limit': None, 'latent_factor': None, 'entity_of_interest':None, 'max_matrix_size':None, 'multiple_models_relation_reconstruction':None, 'output_file_path':None}
         self.presample_rows_dialog = True
         self.presample_OT_dialog = True
         if database_connection is not None:
@@ -1037,6 +1040,10 @@ class FuseRDB():
         if latent_factor is not None:
             self.parameters['latent_factor']=int(latent_factor)
         self.parameters['multiple_models_relation_reconstruction']=multiple_models_relation_reconstruction
+        self.parameters['output_file_path']=output_file_path
+        self.parameters['dummy_var_treshold']=dummy_var_treshold
+        self.object_types_sampling_dialog = object_types_sampling_dialog
+        self.object_sampling_dialog = object_sampling_dialog
         start_time = datetime.now()
 
         self.make_data_connection()
@@ -1056,7 +1063,9 @@ class FuseRDB():
 
 
         #Write to file
-        results_file=open(run_dir+'run_results.txt','w+')
+        results_file_path=run_dir+'run_results.txt' if self.parameters['output_file_path'] is None else self.parameters['output_file_path']
+        print('\n\n\nOUTPUT FILE PATH:',results_file_path,'\n\n')
+        results_file=open(results_file_path,'w+')
         results_file.write(str(self)+'\n\n\n'+final_list+"\n\n\n===== Postopek je trajal:\t"+str( end_time - start_time))
         results_file.close()
 
@@ -1065,14 +1074,12 @@ class FuseRDB():
 
 
 if __name__ == "__main__":
+    '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/avtomobilizem2',dummy_var_treshold=4,alternative_matrices_limit=2,multiple_models_relation_reconstruction='best')
     '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@192.168.217.128/parameciumdb',
                    database2_connection_string='postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb',
-                   dummy_var_treshold=4, fraction_of_rows_to_keep=0.00001, alternative_matrices_limit=1,
-                   object_types_limit=20)
-    '''
-
+                   dummy_var_treshold=4, fraction_of_rows_to_keep=0.00001, alternative_matrices_limit=1)
     '''
     fuse = FuseRDB(database_connection='postgresql://postgres:geslo123@127.0.0.1/mini_parameciumdb',
                    dummy_var_treshold=4, alternative_matrices_limit=1,

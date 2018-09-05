@@ -1,4 +1,4 @@
-# FuseRDB
+# DB Relation Ranking Tool
 --------------------------------
 Orodje je namenjeno merjenju stopnje povezanosti med pari tabel v relacijskih podatkovnih bazah (postgresql).
 Metrika, ki se zato uporablja, je kvaliteta prileganja modela DFMF (Data Fusion Matrix Factorization) matricnemu opisu relacij med tabelami.
